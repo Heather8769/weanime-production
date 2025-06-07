@@ -1,0 +1,50 @@
+<svg width="1200" height="400" viewBox="0 0 1200 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bannerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1a1a1a;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#2a2a2a;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#2a2a2a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:1" />
+    </linearGradient>
+    <pattern id="bannerPattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="40" height="40" fill="none"/>
+      <circle cx="20" cy="20" r="1.5" fill="#ffffff" opacity="0.08"/>
+    </pattern>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="url(#bannerGradient)" />
+  <rect width="100%" height="100%" fill="url(#bannerPattern)" />
+  
+  <!-- Decorative elements -->
+  <g transform="translate(600, 200)">
+    <!-- Large film reel -->
+    <circle cx="0" cy="0" r="60" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.1"/>
+    <circle cx="0" cy="0" r="45" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.15"/>
+    <circle cx="0" cy="0" r="30" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.2"/>
+    
+    <!-- Film holes -->
+    <g opacity="0.15">
+      <circle cx="-40" cy="0" r="4" fill="#ffffff"/>
+      <circle cx="40" cy="0" r="4" fill="#ffffff"/>
+      <circle cx="0" cy="-40" r="4" fill="#ffffff"/>
+      <circle cx="0" cy="40" r="4" fill="#ffffff"/>
+      <circle cx="-28" cy="-28" r="3" fill="#ffffff"/>
+      <circle cx="28" cy="-28" r="3" fill="#ffffff"/>
+      <circle cx="-28" cy="28" r="3" fill="#ffffff"/>
+      <circle cx="28" cy="28" r="3" fill="#ffffff"/>
+    </g>
+    
+    <!-- Center play button -->
+    <circle cx="0" cy="0" r="20" fill="#ffffff" opacity="0.2"/>
+    <polygon points="-8,-10 -8,10 12,0" fill="#ffffff" opacity="0.6"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="600" y="320" text-anchor="middle" fill="#ffffff" opacity="0.4" font-family="Arial, sans-serif" font-size="24" font-weight="600">
+    Anime Banner
+  </text>
+  <text x="600" y="345" text-anchor="middle" fill="#ffffff" opacity="0.3" font-family="Arial, sans-serif" font-size="16">
+    Image Not Available
+  </text>
+</svg>

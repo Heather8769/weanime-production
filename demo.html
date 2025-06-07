@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeAnime - Demo Overview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .anime-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Header -->
+    <header class="bg-black/50 backdrop-blur-sm border-b border-gray-800">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center font-bold">
+                        W
+                    </div>
+                    <span class="text-xl font-bold">WeAnime</span>
+                </div>
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="#" class="hover:text-purple-400 transition-colors">Browse</a>
+                    <a href="#" class="hover:text-purple-400 transition-colors">Trending</a>
+                    <a href="#" class="hover:text-purple-400 transition-colors">Seasonal</a>
+                    <a href="#" class="hover:text-purple-400 transition-colors">Watchlist</a>
+                </nav>
+                <div class="flex items-center space-x-4">
+                    <button class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition-colors">
+                        Sign In
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-[80vh] flex items-center justify-center overflow-hidden anime-gradient">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+        
+        <div class="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                Stream, Track, 
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-400">
+                    Discover
+                </span>
+            </h1>
+            
+            <p class="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
+                Your ultimate anime destination. Watch thousands of episodes, track your progress, 
+                and discover your next favorite series.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+                <button class="bg-white text-black hover:bg-white/90 text-lg px-8 py-3 rounded-lg font-semibold transition-colors">
+                    Start Watching
+                </button>
+                <button class="border-2 border-white text-white hover:bg-white hover:text-black text-lg px-8 py-3 rounded-lg font-semibold transition-colors">
+                    Browse Trending
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div class="glass-effect rounded-lg p-6">
+                    <h3 class="text-2xl font-bold mb-2">10,000+</h3>
+                    <p class="text-white/80">Anime Episodes</p>
+                </div>
+                <div class="glass-effect rounded-lg p-6">
+                    <h3 class="text-2xl font-bold mb-2">HD Quality</h3>
+                    <p class="text-white/80">Crystal Clear Streaming</p>
+                </div>
+                <div class="glass-effect rounded-lg p-6">
+                    <h3 class="text-2xl font-bold mb-2">Ad-Free</h3>
+                    <p class="text-white/80">Uninterrupted Experience</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Overview -->
+    <section class="py-20 bg-gray-800">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-16">Complete Anime Experience</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Phase 1: Setup + Auth -->
+                <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                    <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mb-4">
+                        <span class="text-2xl">🔐</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Authentication</h3>
+                    <ul class="text-gray-300 space-y-2 text-sm">
+                        <li>✅ Secure user authentication</li>
+                        <li>✅ Profile management</li>
+                        <li>✅ Session handling</li>
+                        <li>✅ Password reset</li>
+                    </ul>
+                </div>
+
+                <!-- Phase 2: Metadata & Discovery -->
+                <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                    <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mb-4">
+                        <span class="text-2xl">🔍</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Discovery</h3>
+                    <ul class="text-gray-300 space-y-2 text-sm">
+                        <li>✅ AniList API integration</li>
+                        <li>✅ Advanced search & filters</li>
+                        <li>✅ Trending & seasonal anime</li>
+                        <li>✅ Detailed anime pages</li>
+                    </ul>
+                </div>
+
+                <!-- Phase 3: Streaming Engine -->
+                <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                    <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mb-4">
+                        <span class="text-2xl">🎬</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Streaming</h3>
+                    <ul class="text-gray-300 space-y-2 text-sm">
+                        <li>✅ Professional video player</li>
+                        <li>✅ Episode management</li>
+                        <li>✅ Watch progress tracking</li>
+                        <li>✅ Auto-resume & skip intro</li>
+                    </ul>
+                </div>
+
+                <!-- Phase 4: User Tools -->
+                <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                    <div class="w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center mb-4">
+                        <span class="text-2xl">👤</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">User Tools</h3>
+                    <ul class="text-gray-300 space-y-2 text-sm">
+                        <li>✅ Watchlist management</li>
+                        <li>✅ Rating & review system</li>
+                        <li>✅ User profiles & stats</li>
+                        <li>✅ Comments & social features</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical Stack -->
+    <section class="py-20 bg-gray-900">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-16">Built with Modern Technology</h2>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 text-center">
+                <div class="space-y-3">
+                    <div class="w-16 h-16 bg-black rounded-lg flex items-center justify-center mx-auto">
+                        <span class="text-2xl font-bold text-white">N</span>
+                    </div>
+                    <h4 class="font-semibold">Next.js 15</h4>
+                    <p class="text-gray-400 text-sm">React Framework</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto">
+                        <span class="text-2xl font-bold text-white">TS</span>
+                    </div>
+                    <h4 class="font-semibold">TypeScript</h4>
+                    <p class="text-gray-400 text-sm">Type Safety</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="w-16 h-16 bg-cyan-500 rounded-lg flex items-center justify-center mx-auto">
+                        <span class="text-2xl font-bold text-white">T</span>
+                    </div>
+                    <h4 class="font-semibold">Tailwind CSS</h4>
+                    <p class="text-gray-400 text-sm">Styling</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="w-16 h-16 bg-green-600 rounded-lg flex items-center justify-center mx-auto">
+                        <span class="text-2xl font-bold text-white">S</span>
+                    </div>
+                    <h4 class="font-semibold">Supabase</h4>
+                    <p class="text-gray-400 text-sm">Database & Auth</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="w-16 h-16 bg-orange-500 rounded-lg flex items-center justify-center mx-auto">
+                        <span class="text-2xl font-bold text-white">Z</span>
+                    </div>
+                    <h4 class="font-semibold">Zustand</h4>
+                    <p class="text-gray-400 text-sm">State Management</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="w-16 h-16 bg-purple-600 rounded-lg flex items-center justify-center mx-auto">
+                        <span class="text-2xl font-bold text-white">F</span>
+                    </div>
+                    <h4 class="font-semibold">Framer Motion</h4>
+                    <p class="text-gray-400 text-sm">Animations</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Features Demo -->
+    <section class="py-20 bg-gray-800">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-16">Key Features Implemented</h2>
+            
+            <div class="space-y-12">
+                <!-- Watchlist Management -->
+                <div class="bg-gray-900 rounded-lg p-8 border border-gray-700">
+                    <h3 class="text-2xl font-semibold mb-4 flex items-center">
+                        <span class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">📋</span>
+                        Smart Watchlist Management
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="space-y-2">
+                            <h4 class="font-semibold text-blue-400">Status Tracking</h4>
+                            <ul class="text-gray-300 text-sm space-y-1">
+                                <li>• Watching</li>
+                                <li>• Completed</li>
+                                <li>• Plan to Watch</li>
+                                <li>• Dropped</li>
+                                <li>• On Hold</li>
+                            </ul>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-semibold text-blue-400">Progress Tracking</h4>
+                            <ul class="text-gray-300 text-sm space-y-1">
+                                <li>• Episode progress</li>
+                                <li>• Auto-status updates</li>
+                                <li>• Watch time tracking</li>
+                                <li>• Completion rates</li>
+                            </ul>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-semibold text-blue-400">Analytics</h4>
+                            <ul class="text-gray-300 text-sm space-y-1">
+                                <li>• Watch statistics</li>
+                                <li>• Favorite genres</li>
+                                <li>• Rating analytics</li>
+                                <li>• Activity insights</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video Player -->
+                <div class="bg-gray-900 rounded-lg p-8 border border-gray-700">
+                    <h3 class="text-2xl font-semibold mb-4 flex items-center">
+                        <span class="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center mr-3">🎬</span>
+                        Professional Video Player
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="space-y-2">
+                            <h4 class="font-semibold text-purple-400">Playback Features</h4>
+                            <ul class="text-gray-300 text-sm space-y-1">
+                                <li>• HLS & MP4 support</li>
+                                <li>• Quality selection</li>
+                                <li>• Playback speed control</li>
+                                <li>• Fullscreen mode</li>
+                            </ul>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-semibold text-purple-400">Smart Features</h4>
+                            <ul class="text-gray-300 text-sm space-y-1">
+                                <li>• Auto-resume playback</li>
+                                <li>• Skip intro/outro</li>
+                                <li>• Episode auto-play</li>
+                                <li>• Keyboard shortcuts</li>
+                            </ul>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-semibold text-purple-400">Progress Sync</h4>
+                            <ul class="text-gray-300 text-sm space-y-1">
+                                <li>• Cloud synchronization</li>
+                                <li>• Cross-device resume</li>
+                                <li>• Watch history</li>
+                                <li>• Progress analytics</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Social Features -->
+                <div class="bg-gray-900 rounded-lg p-8 border border-gray-700">
+                    <h3 class="text-2xl font-semibold mb-4 flex items-center">
+                        <span class="w-8 h-8 bg-pink-500 rounded-lg flex items-center justify-center mr-3">💬</span>
+                        Social & Community Features
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="space-y-2">
+                            <h4 class="font-semibold text-pink-400">Rating System</h4>
+                            <ul class="text-gray-300 text-sm space-y-1">
+                                <li>• 10-point rating scale</li>
+                                <li>• Interactive star interface</li>
+                                <li>• Community averages</li>
+                                <li>• Rating analytics</li>
+                            </ul>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-semibold text-pink-400">Reviews & Comments</h4>
+                            <ul class="text-gray-300 text-sm space-y-1">
+                                <li>• Full review system</li>
+                                <li>• Spoiler protection</li>
+                                <li>• Like/dislike system</li>
+                                <li>• Comment sorting</li>
+                            </ul>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-semibold text-pink-400">User Profiles</h4>
+                            <ul class="text-gray-300 text-sm space-y-1">
+                                <li>• Personal statistics</li>
+                                <li>• Activity timeline</li>
+                                <li>• Privacy controls</li>
+                                <li>• Achievement system</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-black py-12">
+        <div class="container mx-auto px-4 text-center">
+            <div class="flex items-center justify-center space-x-2 mb-4">
+                <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center font-bold">
+                    W
+                </div>
+                <span class="text-xl font-bold">WeAnime</span>
+            </div>
+            <p class="text-gray-400 mb-4">
+                A complete anime streaming platform with advanced user tools and social features.
+            </p>
+            <p class="text-gray-500 text-sm">
+                Built with Next.js, TypeScript, Supabase, and modern web technologies.
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

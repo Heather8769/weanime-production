@@ -1,0 +1,51 @@
+{
+  "name": "Kōkai Anime - Stream, Track, Discover",
+  "short_name": "Kōkai Anime",
+  "description": "A full-featured anime streaming platform with cinematic design and deep content discovery",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["entertainment", "multimedia"],
+  "icons": [],
+  "shortcuts": [
+    {
+      "name": "Browse Anime",
+      "short_name": "Browse",
+      "description": "Browse all available anime",
+      "url": "/browse"
+    },
+    {
+      "name": "Trending",
+      "short_name": "Trending",
+      "description": "View trending anime",
+      "url": "/trending"
+    },
+    {
+      "name": "Watchlist",
+      "short_name": "Watchlist",
+      "description": "View your watchlist",
+      "url": "/watchlist"
+    },
+    {
+      "name": "Profile",
+      "short_name": "Profile",
+      "description": "View your profile",
+      "url": "/profile"
+    }
+  ],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "handle_links": "preferred",
+  "capture_links": "existing-client-navigate"
+}
