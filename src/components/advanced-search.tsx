@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 
 interface SearchFilters {
@@ -16,6 +16,7 @@ interface SearchFilters {
 interface AdvancedSearchProps {
   onSearch: (filters: SearchFilters) => void
   isLoading?: boolean
+  initialFilters?: SearchFilters
 }
 
 const GENRES = [
@@ -60,16 +61,25 @@ const SORT_OPTIONS = [
   { value: 'EPISODES_DESC', label: 'Most Episodes' },
 ]
 
-export function AdvancedSearch({ onSearch, isLoading }: AdvancedSearchProps) {
-  const [filters, setFilters] = useState<SearchFilters>({
-    search: '',
-    genre: '',
-    year: null,
-    season: '',
-    format: '',
-    status: '',
-    sort: 'POPULARITY_DESC',
-  })
+export function AdvancedSearch({ onSearch, isLoading, initialFilters }: AdvancedSearchProps) {
+  const [filters, setFilters] = useState<SearchFilters>(
+    initialFilters || {
+      search: '',
+      genre: '',
+      year: null,
+      season: '',
+      format: '',
+      status: '',
+      sort: 'POPULARITY_DESC',
+    }
+  )
+
+  // Update filters when initialFilters change
+  useEffect(() => {
+    if (initialFilters) {
+      setFilters(initialFilters)
+    }
+  }, [initialFilters])
 
   const [showAdvanced, setShowAdvanced] = useState(false)
 

@@ -15,6 +15,10 @@ export interface Episode {
     intro?: { start: number; end: number }
     outro?: { start: number; end: number }
   }
+  airDate?: string
+  streamingId?: string
+  isReal?: boolean
+  source?: string
 }
 
 export interface VideoSource {
@@ -22,6 +26,8 @@ export interface VideoSource {
   quality: string // '1080p', '720p', '480p', etc.
   type: 'hls' | 'mp4' | 'youtube'
   language?: 'sub' | 'dub'
+  isReal?: boolean
+  source?: string
 }
 
 export interface Subtitle {
@@ -29,6 +35,8 @@ export interface Subtitle {
   language: string
   label: string
   default?: boolean
+  isReal?: boolean
+  source?: string
 }
 
 export interface WatchProgress {
@@ -262,8 +270,8 @@ export const useWatchStore = create<WatchState>()(
               anime_id: progress.animeId,
               episode_id: progress.episodeId,
               episode_number: progress.episodeNumber,
-              current_time: progress.currentTime,
-              duration: progress.duration,
+              progress_seconds: progress.currentTime,
+              duration_seconds: progress.duration,
               completed: progress.completed,
               last_watched: progress.lastWatched.toISOString(),
             })
@@ -288,8 +296,8 @@ export const useWatchStore = create<WatchState>()(
               animeId: item.anime_id,
               episodeId: item.episode_id,
               episodeNumber: item.episode_number,
-              currentTime: item.current_time,
-              duration: item.duration,
+              currentTime: item.progress_seconds,
+              duration: item.duration_seconds,
               completed: item.completed,
               lastWatched: new Date(item.last_watched),
             })
@@ -326,17 +334,66 @@ export const useWatchStore = create<WatchState>()(
         settings: state.settings,
         watchProgress: Array.from(state.watchProgress.entries()),
       }),
+      storage: {
+        getItem: (name) => {
+          if (typeof window === 'undefined') return null
+          try {
+            const item = localStorage.getItem(name)
+            return item ? JSON.parse(item) : null
+          } catch (error) {
+            console.warn('Failed to parse stored data, clearing corrupted storage:', error)
+            localStorage.removeItem(name)
+            return null
+          }
+        },
+        setItem: (name, value) => {
+          if (typeof window === 'undefined') return
+          try {
+            localStorage.setItem(name, JSON.stringify(value))
+          } catch (error) {
+            console.warn('Failed to store data:', error)
+          }
+        },
+        removeItem: (name) => {
+          if (typeof window === 'undefined') return
+          localStorage.removeItem(name)
+        },
+      },
       onRehydrateStorage: () => (state) => {
         if (state?.watchProgress) {
-          // Convert array back to Map and ensure dates are properly converted
-          const progressEntries = (state.watchProgress as any).map(([key, value]: [string, any]) => [
-            key,
-            {
-              ...value,
-              lastWatched: new Date(value.lastWatched)
+          try {
+            // Check if watchProgress is already a Map
+            if (state.watchProgress instanceof Map) {
+              // Already a Map, just ensure dates are properly converted
+              const newMap = new Map()
+              for (const [key, value] of state.watchProgress.entries()) {
+                newMap.set(key, {
+                  ...value,
+                  lastWatched: new Date(value.lastWatched)
+                })
+              }
+              state.watchProgress = newMap
+            } else if (Array.isArray(state.watchProgress)) {
+              // Convert array back to Map and ensure dates are properly converted
+              const progressEntries = (state.watchProgress as any).map(([key, value]: [string, any]) => [
+                key,
+                {
+                  ...value,
+                  lastWatched: new Date(value.lastWatched)
+                }
+              ])
+              state.watchProgress = new Map(progressEntries)
+            } else {
+              // Invalid format, reset to empty Map
+              console.warn('Invalid watchProgress format, resetting to empty state')
+              state.watchProgress = new Map()
             }
-          ])
-          state.watchProgress = new Map(progressEntries)
+          } catch (error) {
+            console.warn('Failed to rehydrate watch progress, resetting to empty state:', error)
+            state.watchProgress = new Map()
+          }
+        } else {
+          state!.watchProgress = new Map()
         }
       },
     }

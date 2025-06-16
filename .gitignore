@@ -167,3 +167,64 @@ auto-generated/
 *.njsproj
 *.sln
 *.sw?
+
+# WeAnime specific cleanup - Development/Test files to ignore
+comprehensive-diagnostic-test.js
+final-integration-test.js
+final-validation-test.js
+performance-analysis.js
+pre-deployment-validation.js
+test-*.js
+test-*.py
+*-test.js
+*-test.py
+demo.html
+
+# Temporary backend implementations (keep only services/)
+enhanced-backend-simple.py
+quick-backend-test.py
+real-backend.py
+simple-backend-test.py
+test-backend-simple.py
+test-real-backend.py
+weanime-backend/
+crunchyroll-bridge/
+
+# Temporary scripts
+start-backend-enhanced.sh
+start-backend-simple.sh
+start-backend.sh
+start-dev.sh
+test-staging-locally.sh
+
+# Bundle directories
+crunchyroll_rust_bundle/
+
+# Python specific
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/venv/
+
+# Rust specific
+**/target/
+**/*.rs.bk
+
+# Documentation to ignore (keep only essential)
+ANIME_STREAMING_PLATFORM_PROMPT.md
+CLAUDE.md
+CRUNCHYROLL_INTEGRATION_PLAN.md
+DISCORD_SETUP_GUIDE.md
+FIXES_APPLIED.md
+LOCALHOST_QUICK_START.md
+LOCALHOST_TESTING_GUIDE.md
+LOCAL_TESTING_GUIDE.md
+SLACK_SETUP_GUIDE.md
+TESTING_GUIDE.md
+WEBHOOK_SETUP_GUIDE.md
+Weanime_crunchyroll_bridge_doc.md
+setup-discord-webhook.md
+setup-slack-webhook.md
+deploy-to-railway-staging.md
+deploy-to-vercel-staging.md

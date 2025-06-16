@@ -22,7 +22,7 @@ export const POST = withRateLimit(async function(request: NextRequest) {
     const { error } = await supabase
       .from('error_logs')
       .insert({
-        id: errorReport.id || `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: errorReport.id || `error_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         message: errorReport.message,
         stack: errorReport.stack || null,
         level: errorReport.level || 'error',

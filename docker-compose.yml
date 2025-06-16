@@ -1,7 +1,8 @@
 version: '3.8'
 
 services:
-  app:
+  # Next.js Frontend
+  frontend:
     build:
       context: .
       dockerfile: Dockerfile
@@ -9,41 +10,73 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - CRUNCHYROLL_BRIDGE_URL=http://crunchyroll-bridge:8081
+      - BACKEND_URL=http://backend:8000
     depends_on:
-      - redis
+      - crunchyroll-bridge
+      - backend
     networks:
       - weanime-network
 
+  # Crunchyroll Bridge Microservice
+  crunchyroll-bridge:
+    build:
+      context: ./services/crunchyroll-bridge
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - RUST_LOG=info
+      - PORT=8081
+      - HOST=0.0.0.0
+    env_file:
+      - ./services/crunchyroll-bridge/.env
+    networks:
+      - weanime-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Python Backend
+  backend:
+    build:
+      context: ./weanime-backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - PORT=8000
+    networks:
+      - weanime-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching and sessions
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    command: redis-server --appendonly yes
     volumes:
-      - redis_data:/data
+      - redis-data:/data
     networks:
       - weanime-network
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - app
-    networks:
-      - weanime-network
-
-volumes:
-  redis_data:
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   weanime-network:
     driver: bridge
+
+volumes:
+  redis-data:

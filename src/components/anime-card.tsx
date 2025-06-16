@@ -26,15 +26,15 @@ export function AnimeCard({
   const format = formatAnimeFormat(anime.format)
 
   const cardVariants = {
-    default: 'aspect-[3/4] w-full',
-    large: 'aspect-[3/4] w-full md:aspect-[16/9]',
-    compact: 'aspect-[3/4] w-24 md:w-32',
+    default: 'w-full aspect-[3/4]',
+    large: 'w-full aspect-[16/9]',
+    compact: 'w-24 md:w-32 aspect-[3/4]',
   }
 
   const imageVariants = {
-    default: 'h-full',
-    large: 'h-48 md:h-64',
-    compact: 'h-full',
+    default: 'w-full h-full object-cover',
+    large: 'w-full h-full object-cover',
+    compact: 'w-full h-full object-cover',
   }
 
   return (
@@ -45,7 +45,7 @@ export function AnimeCard({
     >
       <Link href={`/anime/${anime.id}`}>
         <div className={cn(
-          'relative overflow-hidden rounded-xl glass-card glow-effect-hover',
+          'relative overflow-hidden rounded-xl glass-card glow-effect-hover glass-3d',
           cardVariants[variant]
         )}>
           {/* Cover Image */}

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { checkStreamingHealth } from '@/lib/improved-streaming-service'
+import { getStreamingHealth } from '@/lib/improved-streaming-service'
 
 export async function GET() {
   try {
-    const health = await checkStreamingHealth()
+    const health = await getStreamingHealth()
     
     const status = health.overall === 'healthy' ? 200 : 
                    health.overall === 'degraded' ? 206 : 503

@@ -148,10 +148,10 @@ export interface AnimeDetailsResult {
 export interface VideoSource {
   url: string | null
   quality: string
-  type: 'hls' | 'mp4' | 'youtube' | 'placeholder'
-  language: 'sub' | 'dub' | 'N/A'
-  server: string
-  provider: string
+  type: 'hls' | 'mp4' | 'youtube'
+  language?: 'sub' | 'dub' | 'N/A'
+  server?: string
+  provider?: string
   legal?: boolean
   message?: string
   contentType?: 'episode' | 'trailer' | 'preview'
@@ -177,12 +177,13 @@ export interface Episode {
     intro?: { start: number; end: number }
     outro?: { start: number; end: number }
   }
+  airDate?: string
+  streamingId?: string
 }
 
 export interface StreamingData {
   title: string
   sources: VideoSource[]
-  placeholder?: boolean
   requiresLicense?: boolean
 }
 

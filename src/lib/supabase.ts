@@ -5,17 +5,20 @@ import type { Database } from '@/types/database.types'
 // Get validated environment configuration
 const envConfig = getEnvConfig()
 
-// Validate required Supabase configuration
-if (!envConfig.supabase.url || !envConfig.supabase.anonKey) {
+// Use fallback values for development if Supabase is not configured
+const supabaseUrl = envConfig.supabase.url || 'https://placeholder.supabase.co'
+const supabaseAnonKey = envConfig.supabase.anonKey || 'placeholder-anon-key'
+
+// Check if Supabase is properly configured
+const isSupabaseConfigured = !!(envConfig.supabase.url && envConfig.supabase.anonKey)
+
+if (!isSupabaseConfigured && process.env.NODE_ENV === 'production') {
   throw new Error(
-    'Missing required Supabase configuration. Please check your environment variables:\n' +
+    'Missing required Supabase configuration in production. Please check your environment variables:\n' +
     '- NEXT_PUBLIC_SUPABASE_URL\n' +
     '- NEXT_PUBLIC_SUPABASE_ANON_KEY'
   )
 }
-
-const supabaseUrl = envConfig.supabase.url
-const supabaseAnonKey = envConfig.supabase.anonKey
 
 export const supabase = createSupabaseClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -24,6 +27,11 @@ export const supabase = createSupabaseClient<Database>(supabaseUrl, supabaseAnon
     detectSessionInUrl: true
   }
 })
+
+// Helper function to check if Supabase is properly configured
+export function isSupabaseAvailable(): boolean {
+  return isSupabaseConfigured
+}
 
 // Export createClient function for API routes
 export function createClient() {

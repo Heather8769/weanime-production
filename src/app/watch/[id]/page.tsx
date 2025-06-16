@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useAnimeDetails, getAnimeTitle } from '@/hooks/use-anime'
-import { useWatchStore, Episode } from '@/lib/watch-store'
+import { useWatchStore } from '@/lib/watch-store'
+import type { Episode } from '@/lib/watch-store'
 import { getAnimeEpisodes, getNextEpisodeToWatch, getEpisodeWithVideoSources } from '@/lib/episode-service'
 import { VideoPlayer } from '@/components/video-player'
 import { EpisodeList } from '@/components/episode-list'
@@ -19,16 +20,20 @@ interface WatchPageProps {
 export default function WatchPage({ params, searchParams }: WatchPageProps) {
   const { id } = use(params)
   const { episode: episodeParam } = use(searchParams)
-  const animeId = parseInt(id)
   const router = useRouter()
+
+  // Handle both numeric IDs and string slugs
+  const isNumericId = !isNaN(parseInt(id)) && parseInt(id).toString() === id
+  const animeId = isNumericId ? parseInt(id) : null
   
   const [episodes, setEpisodes] = useState<Episode[]>([])
   const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showEpisodeList, setShowEpisodeList] = useState(false)
+  const [resolvedAnimeId, setResolvedAnimeId] = useState<number | null>(animeId)
 
-  const { data: anime } = useAnimeDetails(animeId)
+  const { data: anime } = useAnimeDetails(resolvedAnimeId || 0)
   const {
     setCurrentAnime,
     setCurrentEpisode: setStoreCurrentEpisode,
@@ -38,9 +43,99 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
     syncProgress,
   } = useWatchStore()
 
+  // Handle slug-to-ID conversion
+  useEffect(() => {
+    const resolveSlugToId = async () => {
+      if (animeId) {
+        // Already a numeric ID, no conversion needed
+        setResolvedAnimeId(animeId)
+        return
+      }
+
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        // This is a slug, try to convert it to an AniList ID
+        // First, search the backend for the slug
+        const backendResponse = await fetch(`/api/backend/search?q=${encodeURIComponent(id)}`)
+
+        if (!backendResponse.ok) {
+          throw new Error('Failed to search backend')
+        }
+
+        const backendData = await backendResponse.json()
+
+        if (!backendData.success || !backendData.data.results || backendData.data.results.length === 0) {
+          throw new Error('Anime not found in backend')
+        }
+
+        // Get the anime title from backend results
+        const animeTitle = backendData.data.results[0].title || id
+
+        // Search AniList for this anime
+        const anilistResponse = await fetch('/api/anilist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: `
+              query ($search: String) {
+                Page(page: 1, perPage: 5) {
+                  media(search: $search, type: ANIME) {
+                    id
+                    title {
+                      romaji
+                      english
+                      native
+                    }
+                  }
+                }
+              }
+            `,
+            variables: {
+              search: animeTitle
+            }
+          })
+        })
+
+        if (!anilistResponse.ok) {
+          throw new Error('Failed to search AniList')
+        }
+
+        const anilistData = await anilistResponse.json()
+
+        if (!anilistData.data?.Page?.media || anilistData.data.Page.media.length === 0) {
+          throw new Error('Anime not found in AniList')
+        }
+
+        // Use the first match
+        const resolvedId = anilistData.data.Page.media[0].id
+        setResolvedAnimeId(resolvedId)
+
+        // Update the URL to use the resolved ID
+        const newUrl = episodeParam
+          ? `/watch/${resolvedId}?episode=${episodeParam}`
+          : `/watch/${resolvedId}`
+
+        router.replace(newUrl)
+
+      } catch (err) {
+        console.error('Error resolving slug to ID:', err)
+        setError(err instanceof Error ? err.message : 'Failed to resolve anime')
+        setIsLoading(false)
+      }
+    }
+
+    resolveSlugToId()
+  }, [id, animeId, episodeParam, router])
+
   // Load episodes and set current episode
   useEffect(() => {
     const loadEpisodes = async () => {
+      if (!resolvedAnimeId) return
+
       try {
         setIsLoading(true)
         setError(null)
@@ -48,11 +143,15 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
         // Load watch progress first
         await loadProgress()
 
-        // Get episodes for this anime
-        const animeEpisodes = await getAnimeEpisodes(animeId, anime?.episodes || undefined)
+        // Get episodes for this anime - try backend first, then fallback
+        let animeEpisodes: Episode[] = []
+
+        // Use the episode service to get episodes (it will handle backend integration)
+        console.log('Watch page: Getting episodes from episode service...')
+        animeEpisodes = await getAnimeEpisodes(resolvedAnimeId, anime?.episodes || undefined)
         setEpisodes(animeEpisodes)
         setStoreEpisodes(animeEpisodes)
-        setCurrentAnime(animeId)
+        setCurrentAnime(resolvedAnimeId)
 
         // Determine which episode to play
         let episodeToPlay: Episode | null = null
@@ -62,7 +161,7 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
           episodeToPlay = animeEpisodes.find(ep => ep.id === episodeParam) || null
         } else {
           // Find next episode to watch based on progress
-          episodeToPlay = await getNextEpisodeToWatch(animeId, watchProgress)
+          episodeToPlay = await getNextEpisodeToWatch(resolvedAnimeId, watchProgress)
         }
 
         // Fallback to first episode if none found
@@ -73,7 +172,14 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
         if (episodeToPlay) {
           // Get enhanced video sources for the episode to play
           try {
-            const enhancedEpisode = await getEpisodeWithVideoSources(animeId, episodeToPlay.number)
+            console.log('Getting enhanced episode for:', resolvedAnimeId, episodeToPlay.number)
+            const enhancedEpisode = await getEpisodeWithVideoSources(resolvedAnimeId, episodeToPlay.number)
+            console.log('Enhanced episode result:', enhancedEpisode ? {
+              id: enhancedEpisode.id,
+              title: enhancedEpisode.title,
+              sourcesCount: enhancedEpisode.sources?.length || 0,
+              sources: enhancedEpisode.sources
+            } : 'null')
             const finalEpisode = enhancedEpisode || episodeToPlay
 
             setCurrentEpisode(finalEpisode)
@@ -81,7 +187,7 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
 
             // Update URL if needed
             if (!episodeParam || episodeParam !== finalEpisode.id) {
-              router.replace(`/watch/${animeId}?episode=${finalEpisode.id}`, { scroll: false })
+              router.replace(`/watch/${resolvedAnimeId}?episode=${finalEpisode.id}`, { scroll: false })
             }
           } catch (error) {
             console.error('Error loading enhanced episode:', error)
@@ -90,7 +196,7 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
             setStoreCurrentEpisode(episodeToPlay)
 
             if (!episodeParam || episodeParam !== episodeToPlay.id) {
-              router.replace(`/watch/${animeId}?episode=${episodeToPlay.id}`, { scroll: false })
+              router.replace(`/watch/${resolvedAnimeId}?episode=${episodeToPlay.id}`, { scroll: false })
             }
           }
         } else {
@@ -104,10 +210,10 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
       }
     }
 
-    if (animeId) {
+    if (resolvedAnimeId) {
       loadEpisodes()
     }
-  }, [animeId, anime?.episodes, episodeParam, loadProgress, router, setCurrentAnime, setStoreCurrentEpisode, setStoreEpisodes, watchProgress])
+  }, [resolvedAnimeId, anime?.episodes, episodeParam, loadProgress, router, setCurrentAnime, setStoreCurrentEpisode, setStoreEpisodes, watchProgress])
 
   // Sync progress periodically
   useEffect(() => {
@@ -123,17 +229,17 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
       setIsLoading(true)
 
       // Get episode with enhanced video sources
-      const enhancedEpisode = await getEpisodeWithVideoSources(animeId, episode.number)
+      const enhancedEpisode = await getEpisodeWithVideoSources(resolvedAnimeId!, episode.number)
 
       if (enhancedEpisode) {
         setCurrentEpisode(enhancedEpisode)
         setStoreCurrentEpisode(enhancedEpisode)
-        router.push(`/watch/${animeId}?episode=${enhancedEpisode.id}`, { scroll: false })
+        router.push(`/watch/${resolvedAnimeId}?episode=${enhancedEpisode.id}`, { scroll: false })
       } else {
         // Fallback to basic episode
         setCurrentEpisode(episode)
         setStoreCurrentEpisode(episode)
-        router.push(`/watch/${animeId}?episode=${episode.id}`, { scroll: false })
+        router.push(`/watch/${resolvedAnimeId}?episode=${episode.id}`, { scroll: false })
       }
 
       setShowEpisodeList(false)
@@ -142,7 +248,7 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
       // Fallback to basic episode
       setCurrentEpisode(episode)
       setStoreCurrentEpisode(episode)
-      router.push(`/watch/${animeId}?episode=${episode.id}`, { scroll: false })
+      router.push(`/watch/${resolvedAnimeId}?episode=${episode.id}`, { scroll: false })
       setShowEpisodeList(false)
     } finally {
       setIsLoading(false)
@@ -210,7 +316,7 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
       <div className="relative">
         <VideoPlayer
           episode={currentEpisode}
-          animeId={animeId}
+          animeId={resolvedAnimeId || 0}
           className="w-full"
         />
         
@@ -226,7 +332,7 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
             className="bg-black/50 border-white/20 text-white hover:bg-black/70"
             asChild
           >
-            <Link href={`/anime/${animeId}`}>
+            <Link href={`/anime/${resolvedAnimeId}`}>
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
               </svg>
@@ -324,7 +430,7 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
             <div className="bg-gray-900 rounded-lg p-4 max-h-[600px] overflow-y-auto">
               <EpisodeList
                 episodes={episodes}
-                animeId={animeId}
+                animeId={resolvedAnimeId || 0}
                 currentEpisode={currentEpisode}
                 onEpisodeSelect={handleEpisodeSelect}
               />
@@ -358,7 +464,7 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
             <div className="p-4">
               <EpisodeList
                 episodes={episodes}
-                animeId={animeId}
+                animeId={resolvedAnimeId || 0}
                 currentEpisode={currentEpisode}
                 onEpisodeSelect={handleEpisodeSelect}
               />

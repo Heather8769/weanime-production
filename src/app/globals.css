@@ -4,38 +4,51 @@
 
 @layer base {
   :root {
-    /* Deep black glassmorphism theme */
-    --background: 0 0% 4%;
-    --foreground: 0 0% 95%;
-    --card: 0 0% 6%;
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 6%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 263 70% 65%;
+    /* Deep purple glassmorphism theme with 3D/4D effects */
+    --background: 0 0% 2%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 263 85% 70%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 8%;
-    --secondary-foreground: 0 0% 90%;
-    --muted: 0 0% 8%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 10%;
-    --accent-foreground: 0 0% 90%;
+    --secondary: 0 0% 6%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 6%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 0 0% 8%;
+    --accent-foreground: 0 0% 95%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 12%;
-    --input: 0 0% 12%;
-    --ring: 263 70% 65%;
-    --radius: 0.75rem;
+    --border: 0 0% 10%;
+    --input: 0 0% 10%;
+    --ring: 263 85% 70%;
+    --radius: 1rem;
 
-    /* Glassmorphism specific variables */
-    --glass-bg: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-shadow: rgba(0, 0, 0, 0.3);
-    --blur-strength: 12px;
+    /* Enhanced 3D/4D Glassmorphism variables */
+    --glass-bg: rgba(147, 51, 234, 0.08);
+    --glass-border: rgba(147, 51, 234, 0.15);
+    --glass-shadow: rgba(147, 51, 234, 0.25);
+    --glass-glow: rgba(147, 51, 234, 0.4);
+    --blur-strength: 20px;
+    --blur-heavy: 40px;
 
-    /* Gradient colors for effects */
-    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    /* 3D Transform perspectives */
+    --perspective-near: 800px;
+    --perspective-far: 1200px;
+    --transform-depth: 50px;
+
+    /* 4D Gradient systems */
+    --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #a855f7 25%, #9333ea 50%, #7c3aed 75%, #6d28d9 100%);
+    --gradient-secondary: linear-gradient(135deg, #ec4899 0%, #f97316 25%, #8b5cf6 50%, #3b82f6 75%, #06b6d4 100%);
+    --gradient-accent: linear-gradient(135deg, #1e1b4b 0%, #312e81 25%, #3730a3 50%, #4338ca 75%, #4f46e5 100%);
+    --gradient-depth: linear-gradient(45deg, rgba(147, 51, 234, 0.1) 0%, rgba(79, 70, 229, 0.2) 50%, rgba(147, 51, 234, 0.1) 100%);
+
+    /* Animated background layers */
+    --bg-layer-1: radial-gradient(circle at 20% 50%, rgba(147, 51, 234, 0.15) 0%, transparent 70%);
+    --bg-layer-2: radial-gradient(circle at 80% 20%, rgba(79, 70, 229, 0.15) 0%, transparent 70%);
+    --bg-layer-3: radial-gradient(circle at 40% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 70%);
   }
 
   .dark {
@@ -129,19 +142,123 @@
   transition: box-shadow 0.3s ease;
 }
 
-/* Subtle animated background patterns */
+/* Advanced 4D animated background with depth layers */
 .animated-bg {
   background:
-    radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(75, 172, 254, 0.03) 0%, transparent 50%);
-  animation: float 30s ease-in-out infinite;
+    var(--bg-layer-1),
+    var(--bg-layer-2), 
+    var(--bg-layer-3),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.98) 100%);
+  animation: deepFloat 40s ease-in-out infinite, backgroundShift 60s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-3px) rotate(0.3deg); }
-  66% { transform: translateY(2px) rotate(-0.3deg); }
+.animated-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--gradient-depth);
+  animation: dimensionalShift 30s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes deepFloat {
+  0%, 100% { transform: translateY(0px) rotateX(0deg) rotateY(0deg); }
+  25% { transform: translateY(-2px) rotateX(0.2deg) rotateY(0.1deg); }
+  50% { transform: translateY(1px) rotateX(-0.1deg) rotateY(-0.2deg); }
+  75% { transform: translateY(-1px) rotateX(0.1deg) rotateY(0.1deg); }
+}
+
+@keyframes backgroundShift {
+  0%, 100% { background-position: 0% 0%, 100% 100%, 50% 50%; }
+  33% { background-position: 30% 20%, 70% 80%, 80% 30%; }
+  66% { background-position: 80% 70%, 20% 30%, 40% 90%; }
+}
+
+@keyframes dimensionalShift {
+  0%, 100% { opacity: 0.3; transform: scale(1) rotate(0deg); }
+  50% { opacity: 0.6; transform: scale(1.02) rotate(0.5deg); }
+}
+
+/* 3D Glass Card Effects */
+.glass-3d {
+  transform-style: preserve-3d;
+  perspective: var(--perspective-near);
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.glass-3d:hover {
+  transform: translateY(-8px) rotateX(5deg) rotateY(2deg);
+  box-shadow: 
+    0 25px 50px var(--glass-shadow),
+    0 15px 30px rgba(147, 51, 234, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-4d {
+  position: relative;
+  transform-style: preserve-3d;
+  perspective: var(--perspective-far);
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.glass-4d::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: var(--gradient-primary);
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.glass-4d:hover::before {
+  opacity: 0.6;
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.glass-4d:hover {
+  transform: translateY(-12px) rotateX(8deg) rotateY(4deg) scale(1.02);
+  box-shadow: 
+    0 35px 70px var(--glass-shadow),
+    0 20px 40px rgba(147, 51, 234, 0.4),
+    0 10px 20px rgba(79, 70, 229, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* Dimensional Navigation Effects */
+.nav-3d {
+  background: rgba(147, 51, 234, 0.1);
+  backdrop-filter: blur(var(--blur-heavy));
+  border-bottom: 1px solid rgba(147, 51, 234, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(147, 51, 234, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.nav-3d::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gradient-primary);
+  opacity: 0.6;
 }
 
 /* Enhanced scrollbar styling */

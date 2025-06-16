@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Play, Download, Loader2, AlertCircle, ExternalLink } from 'lucide-react'
+import { WeAnimeBackend } from '@/lib/weanime-backend'
 
 interface BackendPlayerProps {
   initialAnimeSlug?: string
@@ -139,7 +140,7 @@ export function BackendPlayer({
         </Card>
       )}
 
-      {streamData?.stream_url && (
+      {streamData?.stream_url && WeAnimeBackend.isValidStreamUrl(streamData.stream_url) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -156,19 +157,46 @@ export function BackendPlayer({
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline text-sm break-all flex items-center gap-1"
               >
-                {streamData.stream_url}
+                {streamData.stream_url.length > 60 
+                  ? `${streamData.stream_url.substring(0, 60)}...` 
+                  : streamData.stream_url}
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>
             
-            {/* Embed the stream */}
+            {/* Security Warning */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-yellow-700">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">Security Notice</span>
+              </div>
+              <p className="text-sm text-yellow-600 mt-1">
+                This stream is from an external source. Use caution when playing content from unknown URLs.
+              </p>
+            </div>
+            
+            {/* Safe iframe embed with restrictions */}
             <div className="aspect-video bg-black rounded-lg overflow-hidden">
               <iframe
                 src={streamData.stream_url}
                 className="w-full h-full"
                 allowFullScreen
                 title={`${animeSlug} Episode ${episodeNumber}`}
+                sandbox="allow-scripts allow-same-origin allow-fullscreen"
+                referrerPolicy="no-referrer"
               />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Invalid URL Warning */}
+      {streamData?.stream_url && !WeAnimeBackend.isValidStreamUrl(streamData.stream_url) && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">Invalid or unsafe stream URL detected. Playback blocked for security.</span>
             </div>
           </CardContent>
         </Card>

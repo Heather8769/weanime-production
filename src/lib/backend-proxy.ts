@@ -1,7 +1,7 @@
 // Backend proxy service for connecting to FastAPI backend
 import { getEnvConfig } from './env-validation'
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8001'
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000'
 
 export interface BackendSearchResult {
   title: string

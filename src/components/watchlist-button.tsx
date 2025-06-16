@@ -7,6 +7,7 @@ import { useWatchlistStore, WatchStatus } from '@/lib/watchlist-store'
 import { useAuth } from '@/lib/auth-context'
 import { AniListAnime } from '@/lib/anilist'
 import { Button } from '@/components/ui/button'
+import { RatingSystem } from '@/components/rating-system'
 import { cn } from '@/lib/utils'
 
 interface WatchlistButtonProps {
@@ -69,7 +70,10 @@ export function WatchlistButton({
     removeFromWatchlist,
     updateStatus,
     loadWatchlist,
+    toggleFavorite,
   } = useWatchlistStore()
+  
+  const [showRatingDialog, setShowRatingDialog] = useState(false)
 
   const watchlistItem = getWatchlistItem(anime.id)
   const inWatchlist = isInWatchlist(anime.id)
@@ -177,6 +181,7 @@ export function WatchlistButton({
   const statusConfig = currentStatus ? STATUS_CONFIG[currentStatus] : null
 
   return (
+    <>
     <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenu.Trigger asChild>
         <Button 
@@ -244,7 +249,7 @@ export function WatchlistButton({
           
           {/* Additional Options */}
           <DropdownMenu.Item
-            onClick={() => {/* TODO: Open rating dialog */}}
+            onClick={() => setShowRatingDialog(true)}
             className="flex items-center gap-3 px-3 py-2 text-sm rounded cursor-pointer hover:bg-muted transition-colors"
           >
             <span className="text-lg">⭐</span>
@@ -252,7 +257,18 @@ export function WatchlistButton({
           </DropdownMenu.Item>
           
           <DropdownMenu.Item
-            onClick={() => {/* TODO: Toggle favorite */}}
+            onClick={async () => {
+              if (watchlistItem) {
+                setIsLoading(true)
+                try {
+                  await toggleFavorite(anime.id)
+                } catch (error) {
+                  console.error('Failed to toggle favorite:', error)
+                } finally {
+                  setIsLoading(false)
+                }
+              }
+            }}
             className="flex items-center gap-3 px-3 py-2 text-sm rounded cursor-pointer hover:bg-muted transition-colors"
           >
             <span className="text-lg">{watchlistItem?.favorite ? '💖' : '🤍'}</span>
@@ -272,7 +288,34 @@ export function WatchlistButton({
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
-  )
+    
+    {/* Rating Dialog */}
+    {showRatingDialog && (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setShowRatingDialog(false)}>
+        <div className="bg-background border border-border rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+          <h3 className="text-lg font-semibold mb-4">Rate {anime.title?.english || anime.title?.romaji}</h3>
+          <RatingSystem 
+            anime={anime}
+            currentRating={watchlistItem?.rating}
+            onRatingChange={(rating) => {
+              if (rating !== null) {
+                updateStatus(anime.id, watchlistItem?.status || 'plan_to_watch')
+                setShowRatingDialog(false)
+              }
+            }}
+            size="lg"
+            interactive={true}
+            showLabel={true}
+          />
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowRatingDialog(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>)
 }
 
 // Compact version for cards

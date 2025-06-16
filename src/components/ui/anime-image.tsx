@@ -27,9 +27,10 @@ const DEFAULT_FALLBACKS = {
   avatar: '/images/fallback-avatar.svg',
 }
 
-// Generate a placeholder image URL
+// Generate a placeholder image URL - use local SVG instead of external service
 function generatePlaceholderUrl(width: number = 400, height: number = 600, text: string = 'Anime'): string {
-  return `https://via.placeholder.com/${width}x${height}/1a1a1a/ffffff?text=${encodeURIComponent(text)}`
+  // Use local fallback images instead of external placeholder services
+  return '/images/fallback-cover.svg'
 }
 
 // Create a blur data URL for loading states
@@ -56,7 +57,7 @@ export function AnimeImage({
   className,
   fallbackSrc,
   priority = false,
-  sizes,
+  sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
   quality = 75,
   placeholder = 'blur',
   blurDataURL,
@@ -127,7 +128,12 @@ export function AnimeImage({
   if (!src && !currentSrc) {
     const fallback = getFallbackSrc()
     return (
-      <div className={cn('relative overflow-hidden bg-muted', className)}>
+      <div className={cn(
+        'relative overflow-hidden bg-muted',
+        fill && 'w-full h-full',
+        !fill && width && height && `w-[${width}px] h-[${height}px]`,
+        className
+      )}>
         <Image
           src={fallback}
           alt={alt}
@@ -151,7 +157,12 @@ export function AnimeImage({
   }
 
   return (
-    <div className={cn('relative overflow-hidden bg-muted', className)}>
+    <div className={cn(
+      'relative overflow-hidden bg-muted',
+      fill && 'w-full h-full min-h-[200px]', // Ensure minimum height for fill images
+      !fill && width && height && `w-[${width}px] h-[${height}px]`,
+      className
+    )}>
       <Image
         src={currentSrc || src || getFallbackSrc()}
         alt={alt}

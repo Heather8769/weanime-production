@@ -5,14 +5,14 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
 import { UserMenu } from '@/components/user-menu'
-import { SearchBar } from '@/components/search-bar'
+import { EnhancedSearchBar } from '@/components/enhanced-search-bar'
 
 export function Navigation() {
   const { user, loading } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-white/10">
+    <nav className="fixed top-0 left-0 right-0 z-50 nav-3d">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Enhanced Logo */}
@@ -43,7 +43,7 @@ export function Navigation() {
 
           {/* Search Bar */}
           <div className="hidden md:block w-80 mx-8">
-            <SearchBar />
+            <EnhancedSearchBar />
           </div>
 
           {/* Enhanced Auth Section */}
@@ -81,7 +81,7 @@ export function Navigation() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-white/10 glass-card">
             <div className="flex flex-col space-y-3">
-              <SearchBar />
+              <EnhancedSearchBar />
               <Link href="/browse" className="glass-card px-4 py-3 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-all duration-300">
                 Browse
               </Link>

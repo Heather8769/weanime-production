@@ -1,0 +1,1 @@
+/Users/shigeo/Desktop/weanime/src/lib/real-data-service.ts

@@ -157,7 +157,10 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
   }, [isReady, savedProgress, hasStarted])
 
   const handleReady = () => {
+    console.log('Video player ready for episode:', episode.id)
     setIsReady(true)
+    setHasError(false)
+    setRetryCount(0)
   }
 
   const handleStart = () => {
@@ -183,19 +186,42 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
   }
 
   const handleError = useCallback((error: any) => {
-    console.error('Video player error:', error)
+    // Only log meaningful errors, not empty objects
+    const hasErrorContent = error && (
+      error.message ||
+      error.type ||
+      error.code ||
+      (typeof error === 'object' && Object.keys(error).length > 0 && JSON.stringify(error) !== '{}')
+    )
+
+    if (hasErrorContent) {
+      console.error('Video player error details:', {
+        error,
+        episode: episode.id,
+        retryCount,
+        errorType: error?.type || 'unknown',
+        errorMessage: error?.message || 'No message',
+        timestamp: new Date().toISOString()
+      })
+    } else {
+      console.warn('Video player received empty error event for episode:', episode.id)
+    }
+
     setHasError(true)
     setIsReady(false)
 
     // Auto-retry up to 3 times
     if (retryCount < 3) {
+      console.log(`Auto-retrying video load (${retryCount + 1}/3) in 2 seconds...`)
       setTimeout(() => {
         setRetryCount(prev => prev + 1)
         setHasError(false)
         setIsReady(false)
       }, 2000)
+    } else {
+      console.error('Max retries reached for video:', episode.id)
     }
-  }, [retryCount])
+  }, [retryCount, episode.id])
 
   const handleRetry = useCallback(() => {
     setHasError(false)
@@ -207,12 +233,73 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
     playerRef.current?.seekTo(seconds)
   }
 
+  // Validate video source URL
+  const validateVideoUrl = useCallback((url: string): boolean => {
+    try {
+      const urlObj = new URL(url)
+      // Check if it's a valid HTTP/HTTPS URL
+      if (!['http:', 'https:'].includes(urlObj.protocol)) {
+        console.warn('Invalid protocol for video URL:', url)
+        return false
+      }
+      // Check if it looks like a video file
+      const validExtensions = ['.mp4', '.webm', '.ogg', '.m3u8']
+      const hasValidExtension = validExtensions.some(ext =>
+        urlObj.pathname.toLowerCase().includes(ext)
+      )
+      if (!hasValidExtension && !urlObj.hostname.includes('googleapis.com')) {
+        console.warn('URL does not appear to be a video file:', url)
+        return false
+      }
+      return true
+    } catch (error) {
+      console.error('Invalid video URL format:', url, error)
+      return false
+    }
+  }, [])
+
   // Get the best video source (memoized for performance)
   const videoSource = useMemo(() => {
+    // Validate episode exists and has an ID
+    if (!episode || !episode.id) {
+      console.warn('Invalid episode data provided to video player')
+      return ''
+    }
+
+    // Validate episode sources exist and are not empty
+    if (!episode.sources || episode.sources.length === 0) {
+      console.error('No video sources available for episode:', episode.id)
+      throw new Error('Real streaming source unavailable - no video sources provided')
+    }
+
     const preferredQuality = settings.quality === 'auto' ? '1080p' : settings.quality
-    const source = episode.sources.find(s => s.quality === preferredQuality) || episode.sources[0]
-    return source?.url || ''
-  }, [episode.sources, settings.quality])
+    let source = episode.sources.find(s => s.quality === preferredQuality)
+
+    // Fallback to first available source if preferred quality not found
+    if (!source) {
+      source = episode.sources[0]
+    }
+
+    if (!source?.url) {
+      console.error('No valid video URL found for episode:', episode.id)
+      throw new Error('Real streaming source unavailable - no valid video URL')
+    }
+
+    // Validate the URL
+    if (!validateVideoUrl(source.url)) {
+      console.error('Video URL validation failed for episode:', episode.id, source.url)
+      throw new Error('Real streaming source unavailable - invalid video URL format')
+    }
+
+    console.log('Using video source:', {
+      url: source.url,
+      quality: source.quality,
+      episode: episode.id,
+      isValidUrl: validateVideoUrl(source.url)
+    })
+
+    return source.url
+  }, [episode, settings.quality, validateVideoUrl])
 
   return (
     <div
@@ -226,38 +313,65 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
       onMouseLeave={() => isPlaying && setShowControls(false)}
     >
       {/* Video Player */}
-      <ReactPlayer
-        ref={playerRef}
-        url={videoSource}
-        width="100%"
-        height="100%"
-        playing={isPlaying}
-        volume={volume}
-        muted={muted}
-        playbackRate={settings.playbackRate}
-        onReady={handleReady}
-        onStart={handleStart}
-        onProgress={handleProgress}
-        onDuration={handleDuration}
-        onEnded={handleEnded}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onError={handleError}
-        config={{
-          file: {
-            attributes: {
-              crossOrigin: 'anonymous',
+      {videoSource ? (
+        <ReactPlayer
+          ref={playerRef}
+          url={videoSource}
+          width="100%"
+          height="100%"
+          playing={isPlaying}
+          volume={volume}
+          muted={muted}
+          playbackRate={settings.playbackRate}
+          onReady={handleReady}
+          onStart={handleStart}
+          onProgress={handleProgress}
+          onDuration={handleDuration}
+          onEnded={handleEnded}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onError={handleError}
+          config={{
+            file: {
+              attributes: {
+                crossOrigin: 'anonymous',
+                preload: 'metadata',
+                playsInline: true,
+              },
+              // Skip subtitles to avoid CSP issues
+              tracks: [],
+              forceVideo: true,
             },
-            tracks: episode.subtitles.map(sub => ({
-              kind: 'subtitles',
-              src: sub.url,
-              srcLang: sub.language,
-              label: sub.label,
-              default: sub.default,
-            })),
-          },
-        }}
-      />
+          }}
+          fallback={
+            <div className="absolute inset-0 flex items-center justify-center bg-black">
+              <div className="text-center space-y-4 text-white p-6">
+                <div className="text-4xl">📺</div>
+                <h3 className="text-lg font-semibold">Video Player Error</h3>
+                <p className="text-white/80">
+                  Unable to load the video player. Please refresh the page or try a different browser.
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-primary hover:bg-primary/80 rounded transition-colors"
+                >
+                  Refresh Page
+                </button>
+              </div>
+            </div>
+          }
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
+          <div className="text-center space-y-4 text-white p-6">
+            <div className="text-4xl">📺</div>
+            <h3 className="text-lg font-semibold">No Video Source</h3>
+            <p className="text-white/80">
+              Unable to load video for this episode. Please try another episode or check back later.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Loading Overlay */}
       {!isReady && !hasError && (

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useSearchAnime } from '@/hooks/use-anime'
 import { AdvancedSearch } from '@/components/advanced-search'
 import { AnimeCard } from '@/components/anime-card'
@@ -16,9 +17,12 @@ interface SearchFilters {
   sort: string
 }
 
-export default function BrowsePage() {
+function BrowseContent() {
+  const searchParams = useSearchParams()
+  const urlSearch = searchParams.get('search') || ''
+
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
-    search: '',
+    search: urlSearch,
     genre: '',
     year: null,
     season: '',
@@ -27,7 +31,16 @@ export default function BrowsePage() {
     sort: 'POPULARITY_DESC',
   })
 
-  const [hasSearched, setHasSearched] = useState(false)
+  const [hasSearched, setHasSearched] = useState(!!urlSearch)
+
+  // Update search filters when URL parameters change
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || ''
+    if (urlSearch && urlSearch !== searchFilters.search) {
+      setSearchFilters(prev => ({ ...prev, search: urlSearch }))
+      setHasSearched(true)
+    }
+  }, [searchParams, searchFilters.search])
 
   const {
     data,
@@ -65,7 +78,11 @@ export default function BrowsePage() {
       </div>
 
       {/* Search Component */}
-      <AdvancedSearch onSearch={handleSearch} isLoading={isLoading} />
+      <AdvancedSearch
+        onSearch={handleSearch}
+        isLoading={isLoading}
+        initialFilters={searchFilters}
+      />
 
       {/* Results */}
       {hasSearched && (
@@ -194,5 +211,20 @@ export default function BrowsePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function BrowsePage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8">
+        <div className="glass-card p-8 rounded-xl border border-white/10 space-y-4">
+          <h1 className="text-4xl font-bold text-white hero-text">Browse Anime</h1>
+          <p className="text-white/80 text-lg">Loading...</p>
+        </div>
+      </div>
+    }>
+      <BrowseContent />
+    </Suspense>
   )
 }

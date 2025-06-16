@@ -7,17 +7,27 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
 
-  // Supabase Configuration (Required)
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url('Invalid Supabase URL'),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, 'Supabase anon key is required'),
+  // Supabase Configuration (Required in production, optional in development)
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url('Invalid Supabase URL').optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, 'Supabase anon key is required').optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'Supabase service role key is required').optional(),
 
   // Legal Streaming Providers (Optional)
   CRUNCHYROLL_API_URL: z.string().url().optional(),
   CRUNCHYROLL_API_KEY: z.string().optional(),
+  CRUNCHYROLL_EMAIL: z.string().email().optional(),
+  CRUNCHYROLL_PASSWORD: z.string().optional(),
+  CRUNCHYROLL_LOCALE: z.string().optional(),
+  CRUNCHYROLL_BRIDGE_URL: z.string().url().default('http://localhost:8080'),
   FUNIMATION_API_URL: z.string().url().optional(),
   FUNIMATION_API_KEY: z.string().optional(),
   YOUTUBE_API_KEY: z.string().optional(),
+
+  // WeAnime Backend Configuration
+  NEXT_PUBLIC_BACKEND_URL: z.string().url().default('http://localhost:8000'),
+  WEANIME_BACKEND_URL: z.string().url().default('http://localhost:8000'),
+  WEANIME_BACKEND_FALLBACK_URLS: z.string().optional(),
+  BACKEND_API_KEY: z.string().optional(),
 
   // External APIs
   ANILIST_API_URL: z.string().url().default('https://graphql.anilist.co'),
@@ -159,9 +169,13 @@ export function getEnvConfig() {
     
     streaming: {
       crunchyroll: {
-        enabled: !!(env.CRUNCHYROLL_API_URL && env.CRUNCHYROLL_API_KEY),
+        enabled: !!(env.CRUNCHYROLL_EMAIL && env.CRUNCHYROLL_PASSWORD),
         url: env.CRUNCHYROLL_API_URL,
-        key: env.CRUNCHYROLL_API_KEY
+        key: env.CRUNCHYROLL_API_KEY,
+        email: env.CRUNCHYROLL_EMAIL,
+        password: env.CRUNCHYROLL_PASSWORD,
+        locale: env.CRUNCHYROLL_LOCALE,
+        bridgeUrl: env.CRUNCHYROLL_BRIDGE_URL
       },
       funimation: {
         enabled: !!(env.FUNIMATION_API_URL && env.FUNIMATION_API_KEY),
@@ -172,6 +186,13 @@ export function getEnvConfig() {
         enabled: !!env.YOUTUBE_API_KEY,
         key: env.YOUTUBE_API_KEY
       }
+    },
+    
+    backend: {
+      url: env.NEXT_PUBLIC_BACKEND_URL,
+      weAnimeUrl: env.WEANIME_BACKEND_URL,
+      fallbackUrls: env.WEANIME_BACKEND_FALLBACK_URLS ? env.WEANIME_BACKEND_FALLBACK_URLS.split(',') : [],
+      apiKey: env.BACKEND_API_KEY
     },
     
     apis: {
@@ -186,7 +207,7 @@ export function getEnvConfig() {
     
     upload: {
       maxFileSize: env.MAX_FILE_SIZE,
-      allowedTypes: env.ALLOWED_FILE_TYPES.split(',')
+      allowedTypes: env.ALLOWED_FILE_TYPES ? env.ALLOWED_FILE_TYPES.split(',') : ['image/jpeg', 'image/png', 'image/webp']
     },
     
     features: {

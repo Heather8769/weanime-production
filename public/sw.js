@@ -213,9 +213,15 @@ async function handleNavigationRequest(request) {
     const networkResponse = await fetch(request)
     
     if (networkResponse.ok) {
-      // Cache successful navigation responses
-      const cache = await caches.open(DYNAMIC_CACHE)
-      cache.put(request, networkResponse.clone())
+      // Only cache non-partial responses (avoid 206 status code errors)
+      if (networkResponse.status !== 206) {
+        try {
+          const cache = await caches.open(DYNAMIC_CACHE)
+          await cache.put(request, networkResponse.clone())
+        } catch (cacheError) {
+          console.warn('Service Worker: Failed to cache response:', cacheError)
+        }
+      }
       return networkResponse
     }
     

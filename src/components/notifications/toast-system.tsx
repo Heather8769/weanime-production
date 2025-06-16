@@ -148,7 +148,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
-    const id = Math.random().toString(36).substr(2, 9)
+    const id = Math.random().toString(36).substring(2, 11)
     const newToast: Toast = { ...toast, id }
 
     setToasts((prev) => [...prev, newToast])
@@ -198,7 +198,7 @@ export function useProgressToast() {
   const { addToast, removeToast } = useToast()
 
   const showProgress = useCallback((message: string, title?: string) => {
-    const id = Math.random().toString(36).substr(2, 9)
+    const id = Math.random().toString(36).substring(2, 11)
     
     addToast({
       type: 'info',

@@ -1,262 +1,251 @@
-// Real anime streaming service using multiple APIs
-// Based on anime_manga_databases.markdown recommendations
+/**
+ * Real Crunchyroll Streaming Service - NO MOCK DATA
+ * 
+ * This service provides ONLY authentic streaming data from Crunchyroll.
+ * It does NOT provide demo, fallback, or mock content.
+ */
 
-import { fetchLegalAnimeStreams } from './real-anime-apis'
+import { WeAnimeError, ErrorCode, withRetry } from './error-handling'
 
-// Popular anime mappings for better API success rates
-const POPULAR_ANIME_MAPPINGS = {
-  // Naruto
-  20: {
-    consumetId: 'naruto',
-    gogoId: 'naruto',
-    alternativeIds: ['naruto-dub', 'naruto-shippuden'],
-    title: 'Naruto'
-  },
-  // Cowboy Bebop
-  1: {
-    consumetId: 'cowboy-bebop',
-    gogoId: 'cowboy-bebop',
-    alternativeIds: ['cowboy-bebop-dub'],
-    title: 'Cowboy Bebop'
-  },
-  // Hunter x Hunter
-  11061: {
-    consumetId: 'hunter-x-hunter-2011',
-    gogoId: 'hunter-x-hunter-2011',
-    alternativeIds: ['hunter-x-hunter'],
-    title: 'Hunter x Hunter (2011)'
-  },
-  // Attack on Titan
-  16498: {
-    consumetId: 'shingeki-no-kyojin',
-    gogoId: 'shingeki-no-kyojin',
-    alternativeIds: ['attack-on-titan'],
-    title: 'Attack on Titan'
-  },
-  // One Piece
-  21: {
-    consumetId: 'one-piece',
-    gogoId: 'one-piece',
-    alternativeIds: ['one-piece-dub'],
-    title: 'One Piece'
-  }
+export interface RealStreamingSource {
+  id: string
+  title: string
+  url: string
+  quality: string
+  type: 'hls' | 'mp4'
+  isReal: true
+  source: 'crunchyroll'
+  language?: 'sub' | 'dub'
+  subtitles?: RealSubtitle[]
 }
 
-// Real streaming APIs with working endpoints
-const WORKING_STREAMING_APIS = {
-  // Consumet API - Most reliable for real anime streaming
-  consumet: {
-    baseUrl: 'https://api.consumet.org',
-    endpoints: {
-      search: '/anime/gogoanime/search',
-      info: '/anime/gogoanime/info',
-      watch: '/anime/gogoanime/watch'
-    },
-    priority: 1,
-    working: true
-  },
-  
-  // Alternative APIs
-  animeapi: {
-    baseUrl: 'https://anime-api.hianime.to',
-    endpoints: {
-      search: '/search',
-      info: '/info',
-      watch: '/watch'
-    },
-    priority: 2,
-    working: true
-  }
+export interface RealSubtitle {
+  language: string
+  url: string
+  label: string
+  isReal: true
+  source: 'crunchyroll'
 }
 
-// Fetch real anime streaming data with multiple fallbacks
-export async function getRealAnimeStreaming(animeId: number, episodeNumber: number) {
-  console.log(`🎬 Fetching real streaming data for anime ${animeId} episode ${episodeNumber}`)
+export interface RealStreamingResponse {
+  success: boolean
+  animeId: number
+  episodeNumber: number
+  sources: RealStreamingSource[]
+  subtitles: RealSubtitle[]
+  title: string
+  description?: string
+  duration?: number
+  isReal: true
+  source: 'crunchyroll'
+  timestamp: string
+}
+
+const CRUNCHYROLL_BRIDGE_URL = process.env.NEXT_PUBLIC_CRUNCHYROLL_BRIDGE_URL || 'http://localhost:8081'
+
+/**
+ * Get real anime streaming data from Crunchyroll ONLY
+ */
+export async function getRealAnimeStreaming(
+  animeId: string | number, 
+  episodeNumber: string | number
+): Promise<RealStreamingResponse> {
   
-  // Try to get anime mapping for better API success
-  const animeMapping = POPULAR_ANIME_MAPPINGS[animeId as keyof typeof POPULAR_ANIME_MAPPINGS]
+  // Convert inputs to ensure proper types
+  const numericAnimeId = typeof animeId === 'string' ? parseInt(animeId, 10) : animeId
+  const numericEpisodeNumber = typeof episodeNumber === 'string' ? parseInt(episodeNumber, 10) : episodeNumber
   
-  if (animeMapping) {
-    console.log(`📺 Found mapping for ${animeMapping.title}`)
-    
-    // Try Consumet API first (most reliable)
-    try {
-      const consumetData = await fetchFromConsumet(animeMapping, episodeNumber)
-      if (consumetData) {
-        console.log(`✅ Successfully fetched from Consumet API`)
-        return consumetData
-      }
-    } catch (error) {
-      console.warn(`❌ Consumet API failed:`, error)
-    }
-    
-    // Try alternative APIs
-    try {
-      const alternativeData = await fetchFromAlternativeAPIs(animeMapping, episodeNumber)
-      if (alternativeData) {
-        console.log(`✅ Successfully fetched from alternative API`)
-        return alternativeData
-      }
-    } catch (error) {
-      console.warn(`❌ Alternative APIs failed:`, error)
-    }
+  if (isNaN(numericAnimeId) || isNaN(numericEpisodeNumber)) {
+    throw new WeAnimeError(
+      ErrorCode.INVALID_INPUT,
+      'Invalid anime ID or episode number provided'
+    )
   }
-  
-  // Fallback to the original real anime APIs service
+
+  console.log(`🎬 [REAL-STREAMING] Fetching real Crunchyroll stream for anime ${numericAnimeId}, episode ${numericEpisodeNumber}`)
+
   try {
-    const fallbackData = await fetchLegalAnimeStreams(animeId, episodeNumber)
-    if (fallbackData) {
-      console.log(`✅ Using fallback streaming data`)
-      return fallbackData
+    // Get real streaming data from Crunchyroll Bridge
+    const streamingData = await withRetry(async () => {
+      const response = await fetch(
+        `${CRUNCHYROLL_BRIDGE_URL}/api/stream/${numericAnimeId}/${numericEpisodeNumber}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          cache: 'no-cache' // Always get fresh real data
+        }
+      )
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new WeAnimeError(
+            ErrorCode.NO_CONTENT,
+            `Real episode not found on Crunchyroll: anime ${numericAnimeId}, episode ${numericEpisodeNumber}`
+          )
+        }
+        
+        if (response.status === 429) {
+          throw new WeAnimeError(
+            ErrorCode.RATE_LIMITED,
+            'Crunchyroll rate limit reached - please try again later'
+          )
+        }
+
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`Crunchyroll Bridge API failed: ${response.status} - ${errorData.message || response.statusText}`)
+      }
+
+      return response.json()
+    }, { maxAttempts: 3 })
+
+    // Validate response structure
+    if (!streamingData.success || !streamingData.sources || !Array.isArray(streamingData.sources)) {
+      throw new WeAnimeError(
+        ErrorCode.API_ERROR,
+        'Invalid streaming response from Crunchyroll Bridge'
+      )
     }
+
+    // Validate that sources are real Crunchyroll streams
+    const realSources: RealStreamingSource[] = streamingData.sources
+      .filter((source: any) => isRealCrunchyrollSource(source))
+      .map((source: any): RealStreamingSource => ({
+        id: source.id || `cr-${numericAnimeId}-${numericEpisodeNumber}`,
+        title: source.title || `Episode ${numericEpisodeNumber}`,
+        url: source.url,
+        quality: source.quality || '1080p',
+        type: source.type || 'hls',
+        isReal: true,
+        source: 'crunchyroll',
+        language: source.language,
+        subtitles: source.subtitles?.map((sub: any): RealSubtitle => ({
+          language: sub.language,
+          url: sub.url,
+          label: sub.label,
+          isReal: true,
+          source: 'crunchyroll'
+        })) || []
+      }))
+
+    if (realSources.length === 0) {
+      throw new WeAnimeError(
+        ErrorCode.NO_CONTENT,
+        'No real Crunchyroll streaming sources available for this episode'
+      )
+    }
+
+    // Extract subtitles from all sources
+    const allSubtitles: RealSubtitle[] = realSources
+      .flatMap(source => source.subtitles || [])
+      .filter((subtitle, index, self) => 
+        index === self.findIndex(s => s.language === subtitle.language)
+      )
+
+    const response: RealStreamingResponse = {
+      success: true,
+      animeId: numericAnimeId,
+      episodeNumber: numericEpisodeNumber,
+      sources: realSources,
+      subtitles: allSubtitles,
+      title: streamingData.title || `Anime ${numericAnimeId} - Episode ${numericEpisodeNumber}`,
+      description: streamingData.description,
+      duration: streamingData.duration,
+      isReal: true,
+      source: 'crunchyroll',
+      timestamp: new Date().toISOString()
+    }
+
+    console.log(`✅ [REAL-STREAMING] Successfully retrieved ${realSources.length} real streaming sources from Crunchyroll`)
+    return response
+
   } catch (error) {
-    console.warn(`❌ Fallback APIs failed:`, error)
+    console.error(`❌ [REAL-STREAMING] Failed to get real streaming data:`, error)
+    
+    if (error instanceof WeAnimeError) {
+      throw error
+    }
+
+    // NO FALLBACK TO MOCK DATA - FAIL CLEARLY
+    throw new WeAnimeError(
+      ErrorCode.STREAM_UNAVAILABLE,
+      `Real Crunchyroll streaming unavailable: ${error instanceof Error ? error.message : 'Unknown error'}. WeAnime only provides authentic streaming.`
+    )
   }
-  
-  // Final fallback - enhanced demo streams
-  console.log(`⚠️ Using enhanced demo streams for anime ${animeId} episode ${episodeNumber}`)
-  return generateEnhancedDemoStreams(animeId, episodeNumber)
 }
 
-// Fetch from Consumet API (most reliable)
-async function fetchFromConsumet(animeMapping: any, episodeNumber: number) {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+/**
+ * Validate that a streaming source is from real Crunchyroll
+ */
+function isRealCrunchyrollSource(source: any): boolean {
+  if (!source || !source.url || typeof source.url !== 'string') {
+    return false
+  }
+
+  // Check for known mock domains
+  const mockDomains = [
+    'archive.org',
+    'sample-videos.com',
+    'file-examples.com',
+    'learningcontainer.com',
+    'commondatastorage.googleapis.com',
+    'download.blender.org'
+  ]
+
+  const url = source.url.toLowerCase()
   
+  for (const mockDomain of mockDomains) {
+    if (url.includes(mockDomain)) {
+      console.warn(`⚠️ [REAL-STREAMING] Rejected mock streaming source: ${source.url}`)
+      return false
+    }
+  }
+
+  // Validate it's a proper streaming URL (HLS or direct video)
+  const isValidStream = url.includes('.m3u8') || 
+                       url.includes('.mp4') || 
+                       url.includes('crunchyroll') ||
+                       url.includes('cdn')
+
+  if (!isValidStream) {
+    console.warn(`⚠️ [REAL-STREAMING] Rejected invalid streaming URL format: ${source.url}`)
+    return false
+  }
+
+  return true
+}
+
+/**
+ * Check if Crunchyroll Bridge service is available
+ */
+export async function isCrunchyrollBridgeHealthy(): Promise<boolean> {
   try {
-    // First, search for the anime
-    const searchUrl = `${WORKING_STREAMING_APIS.consumet.baseUrl}${WORKING_STREAMING_APIS.consumet.endpoints.search}/${animeMapping.consumetId}`
-    const searchResponse = await fetch(searchUrl, {
-      signal: controller.signal,
+    const response = await fetch(`${CRUNCHYROLL_BRIDGE_URL}/health`, {
+      method: 'HEAD',
       headers: { 'Accept': 'application/json' }
     })
-    
-    if (!searchResponse.ok) {
-      throw new Error(`Search failed: ${searchResponse.status}`)
-    }
-    
-    const searchData = await searchResponse.json()
-    
-    if (searchData.results && searchData.results.length > 0) {
-      const animeInfo = searchData.results[0]
-      
-      // Get anime info to find episode ID
-      const infoUrl = `${WORKING_STREAMING_APIS.consumet.baseUrl}${WORKING_STREAMING_APIS.consumet.endpoints.info}/${animeInfo.id}`
-      const infoResponse = await fetch(infoUrl, {
-        signal: controller.signal,
-        headers: { 'Accept': 'application/json' }
-      })
-      
-      if (infoResponse.ok) {
-        const infoData = await infoResponse.json()
-        
-        if (infoData.episodes && infoData.episodes.length >= episodeNumber) {
-          const episode = infoData.episodes[episodeNumber - 1]
-          
-          // Get streaming links
-          const watchUrl = `${WORKING_STREAMING_APIS.consumet.baseUrl}${WORKING_STREAMING_APIS.consumet.endpoints.watch}/${episode.id}`
-          const watchResponse = await fetch(watchUrl, {
-            signal: controller.signal,
-            headers: { 'Accept': 'application/json' }
-          })
-          
-          if (watchResponse.ok) {
-            const watchData = await watchResponse.json()
-            
-            if (watchData.sources && watchData.sources.length > 0) {
-              clearTimeout(timeoutId)
-              return {
-                title: `${animeMapping.title} - Episode ${episodeNumber}`,
-                sources: watchData.sources.map((source: any, index: number) => ({
-                  url: source.url,
-                  quality: source.quality || `${1080 - (index * 240)}p`,
-                  type: source.isM3U8 ? 'hls' : 'mp4',
-                  language: 'sub',
-                  server: `Real Server ${index + 1}`,
-                  provider: 'Consumet API (Real Streaming)'
-                }))
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    clearTimeout(timeoutId)
-    return null
-    
+    return response.ok
   } catch (error) {
-    clearTimeout(timeoutId)
-    throw error
+    console.warn('Crunchyroll Bridge health check failed:', error)
+    return false
   }
 }
 
-// Fetch from alternative APIs
-async function fetchFromAlternativeAPIs(animeMapping: any, episodeNumber: number) {
-  // This would implement other real APIs
-  // For now, return null to fall back to other methods
-  return null
+/**
+ * Get supported streaming qualities from Crunchyroll
+ */
+export function getSupportedRealQualities(): string[] {
+  return ['1080p', '720p', '480p', '360p']
 }
 
-// Generate enhanced demo streams with real-looking URLs
-function generateEnhancedDemoStreams(animeId: number, episodeNumber: number) {
-  const demoStreams = [
-    'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
-    'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
-    'https://bitdash-a.akamaihd.net/content/MI201109210084_1/m3u8s/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.m3u8',
-    'https://multiplatform-f.akamaihd.net/i/multi/will/bunny/big_buck_bunny_,640x360_400,640x360_700,640x360_1000,950x540_1500,.f4v.csmil/master.m3u8',
-  ]
-  
-  const baseUrl = demoStreams[episodeNumber % demoStreams.length]
-  
-  return {
-    title: `Episode ${episodeNumber}`,
-    sources: [
-      {
-        url: baseUrl,
-        quality: '1080p',
-        type: 'hls',
-        language: 'sub',
-        server: 'Enhanced Demo Server 1 (HD)',
-        provider: 'Enhanced Demo Streaming'
-      },
-      {
-        url: baseUrl,
-        quality: '720p',
-        type: 'hls',
-        language: 'sub',
-        server: 'Enhanced Demo Server 2 (HD)',
-        provider: 'Enhanced Demo Streaming'
-      },
-      {
-        url: baseUrl,
-        quality: '480p',
-        type: 'hls',
-        language: 'sub',
-        server: 'Enhanced Demo Server 3 (SD)',
-        provider: 'Enhanced Demo Streaming'
-      },
-      {
-        url: baseUrl,
-        quality: '360p',
-        type: 'hls',
-        language: 'sub',
-        server: 'Enhanced Demo Server 4 (Mobile)',
-        provider: 'Enhanced Demo Streaming'
-      }
-    ]
-  }
+/**
+ * Generate episode streaming URL for direct access
+ */
+export function getRealStreamingUrl(animeId: number, episodeNumber: number, quality: string = '1080p'): string {
+  return `${CRUNCHYROLL_BRIDGE_URL}/api/stream/${animeId}/${episodeNumber}?quality=${quality}`
 }
 
-// Check if real streaming is available for an anime
-export function hasRealStreamingAvailable(animeId: number): boolean {
-  return animeId in POPULAR_ANIME_MAPPINGS
-}
-
-// Get available streaming providers for an anime
-export function getStreamingProviders(animeId: number): string[] {
-  if (hasRealStreamingAvailable(animeId)) {
-    return ['Consumet API (Real)', 'Alternative APIs', 'Enhanced Demo']
-  }
-  return ['Enhanced Demo Streaming']
-}
+// Export for backward compatibility
+export const generateRealAnimeStreams = getRealAnimeStreaming

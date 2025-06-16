@@ -51,7 +51,7 @@ class WebhookAlertSystem {
     }
 
     // Send to custom webhooks
-    this.config.custom.forEach(url => {
+    this.config.custom?.forEach(url => {
       promises.push(this.sendCustomAlert(alert, url))
     })
 
@@ -64,7 +64,7 @@ class WebhookAlertSystem {
   }
 
   private async sendSlackAlert(alert: ErrorAlert): Promise<void> {
-    const payload = {
+    const payload: any = {
       text: `${this.getEmojiForLevel(alert.level)} WeAnime ${alert.level.toUpperCase()} Alert`,
       blocks: [
         {
@@ -283,7 +283,7 @@ class WebhookAlertSystem {
       slack: !!this.config.slack,
       discord: !!this.config.discord,
       test: !!this.config.test,
-      custom: this.config.custom.length > 0
+      custom: (this.config.custom?.length ?? 0) > 0
     }
   }
 }
@@ -302,7 +302,7 @@ export async function sendErrorAlert(error: {
   metadata?: Record<string, any>
 }): Promise<void> {
   const alert: ErrorAlert = {
-    id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `alert_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
     level: error.level || 'error',
     message: error.message,
     component: error.component,

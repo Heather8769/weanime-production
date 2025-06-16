@@ -51,7 +51,7 @@ class ErrorLogger {
   }
 
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    return `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
   }
 
   private setupSentry() {
@@ -256,7 +256,7 @@ class ErrorLogger {
 
   private createLog(level: ErrorLog['level'], params: any) {
     const log: ErrorLog = {
-      id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       timestamp: new Date(),
       level,
       message: params.message,

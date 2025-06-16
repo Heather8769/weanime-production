@@ -9,6 +9,26 @@ import { getAnimeTitle } from '@/hooks/use-anime'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+// Database function for saving reviews
+async function saveReviewToDatabase(animeId: number, rating: number, review: string): Promise<void> {
+  const response = await fetch('/api/reviews', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      animeId,
+      rating,
+      review,
+      createdAt: new Date().toISOString()
+    })
+  })
+  
+  if (!response.ok) {
+    throw new Error('Failed to save review to database')
+  }
+}
+
 interface RatingSystemProps {
   anime: AniListAnime
   currentRating?: number | null
@@ -126,7 +146,12 @@ export function RatingDialog({ anime, isOpen, onOpenChange }: RatingDialogProps)
     setIsSubmitting(true)
     try {
       await updateRating(anime.id, rating)
-      // TODO: Save review to database
+      
+      // Save rating and review to database
+      if (review.trim()) {
+        await saveReviewToDatabase(anime.id, rating, review.trim())
+      }
+      
       onOpenChange(false)
     } catch (error) {
       console.error('Failed to submit rating:', error)

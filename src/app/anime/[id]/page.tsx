@@ -88,8 +88,10 @@ export default function AnimePage({ params }: AnimePageProps) {
           src={anime.bannerImage || anime.coverImage.large}
           alt={title}
           fill
+          sizes="100vw"
           className="object-cover"
           priority
+          quality={85}
         />
         
         {/* Gradient Overlay */}
@@ -109,6 +111,8 @@ export default function AnimePage({ params }: AnimePageProps) {
                   src={anime.coverImage.large}
                   alt={title}
                   fill
+                  sizes="(max-width: 768px) 192px, 192px"
+                  priority
                   className="object-cover rounded-lg shadow-2xl"
                 />
               </motion.div>
@@ -228,6 +232,7 @@ export default function AnimePage({ params }: AnimePageProps) {
                           src={relation.node.coverImage.medium}
                           alt={relation.node.title.romaji}
                           fill
+                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
                           className="object-cover transition-transform group-hover:scale-105"
                         />
                       </div>
@@ -294,8 +299,8 @@ export default function AnimePage({ params }: AnimePageProps) {
                 <div className="space-y-2">
                   {anime.studios.nodes
                     .filter(studio => studio.isAnimationStudio)
-                    .map((studio) => (
-                      <div key={studio.id} className="text-sm">
+                    .map((studio, index) => (
+                      <div key={`${studio.id}-${index}`} className="text-sm">
                         {studio.name}
                       </div>
                     ))}
