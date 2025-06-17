@@ -160,25 +160,13 @@ export class CrunchyrollBridgeService {
   async getStreamingSources(episodeId: string): Promise<CrunchyrollStreamingSource[]> {
     try {
       const output = await this.executeBridgeCommand(['stream', episodeId])
-      
-      // Use real anime streaming sources from legitimate archives
-      const animeId = episodeId.split('-')[1] || '1'
-      const episodeNum = episodeId.split('-')[3] || '1'
 
-      return [
-        {
-          url: `https://archive.org/download/anime-collection-${animeId}/episode-${episodeNum}-1080p.mp4`,
-          quality: '1080p',
-          format: 'mp4',
-          audio_locale: 'ja-JP'
-        },
-        {
-          url: `https://archive.org/download/anime-collection-${animeId}/episode-${episodeNum}-720p.mp4`,
-          quality: '720p',
-          format: 'mp4',
-          audio_locale: 'ja-JP'
-        }
-      ]
+      // LEGACY METHOD - DEPRECATED
+      // This method is no longer used in production
+      // Real streaming is handled by the HTTP bridge service
+      console.warn('getStreamingSources is deprecated - use HTTP bridge service instead')
+
+      return []
     } catch (error) {
       console.error('Failed to get streaming sources:', error)
       return []
@@ -201,16 +189,13 @@ export class CrunchyrollBridgeService {
   async getSeriesInfo(seriesId: string): Promise<any> {
     try {
       const output = await this.executeBridgeCommand(['series', seriesId])
-      
-      // For now, return mock data
-      return {
-        id: seriesId,
-        title: 'Crunchyroll Series',
-        description: 'Series from Crunchyroll',
-        poster_tall: 'https://example.com/poster.jpg',
-        episode_count: 24,
-        season_count: 1
-      }
+
+      // LEGACY METHOD - DEPRECATED
+      // This method is no longer used in production
+      // Real series info is handled by the HTTP bridge service
+      console.warn('getSeriesInfo is deprecated - use HTTP bridge service instead')
+
+      return null
     } catch (error) {
       console.error('Failed to get series info:', error)
       return null

@@ -14,12 +14,14 @@ const nextConfig = {
   // Performance optimizations
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+  },
+
+  // Turbopack configuration (moved from experimental.turbo)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
     },
   },
@@ -55,24 +57,7 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'via.placeholder.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'archive.org',
-        port: '',
-        pathname: '/**',
-      },
+
 
     ],
     formats: ['image/webp', 'image/avif'],
@@ -106,7 +91,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.googleapis.com *.google.com *.jsdelivr.net; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: blob: *.anilist.co *.crunchyroll.com *.myanimelist.net *.googleapis.com *.ytimg.com picsum.photos *.kitsu.app *.kitsu.io *.archive.org; media-src 'self' blob: *.googleapis.com commondatastorage.googleapis.com *.consumet.org *.vercel.app *.archive.org archive.org *.sample-videos.com sample-videos.com *.blender.org download.blender.org *.learningcontainer.com learningcontainer.com *.file-examples.com file-examples.com; frame-src 'self' *.youtube.com *.googleapis.com; connect-src 'self' *.supabase.co *.anilist.co *.jikan.moe localhost:8000 localhost:8003 *.jsdelivr.net *.consumet.org *.vercel.app api.consumet.org aniwatch-api.vercel.app *.kitsu.io api.jikan.moe *.googleapis.com commondatastorage.googleapis.com *.archive.org archive.org *.sample-videos.com sample-videos.com *.blender.org download.blender.org *.learningcontainer.com learningcontainer.com *.file-examples.com file-examples.com;",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.googleapis.com *.google.com *.jsdelivr.net; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: blob: *.anilist.co *.crunchyroll.com *.myanimelist.net *.googleapis.com *.ytimg.com *.kitsu.app *.kitsu.io; media-src 'self' blob: *.googleapis.com commondatastorage.googleapis.com *.crunchyroll.com; frame-src 'self' *.youtube.com *.googleapis.com; connect-src 'self' *.supabase.co *.anilist.co *.jikan.moe localhost:8000 localhost:8003 localhost:8081 *.jsdelivr.net *.consumet.org *.vercel.app api.consumet.org aniwatch-api.vercel.app *.kitsu.io api.jikan.moe *.googleapis.com commondatastorage.googleapis.com *.crunchyroll.com;",
           },
         ],
       },
