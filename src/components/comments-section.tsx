@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { AverageRating } from '@/components/rating-system'
 import { cn } from '@/lib/utils'
+import { moderateComment } from '@/lib/content-moderation'
 
 interface Comment {
   id: string
@@ -42,74 +43,71 @@ export function CommentsSection({ animeId, className }: CommentsSectionProps) {
   const loadComments = useCallback(async () => {
     setIsLoading(true)
     try {
-      // For now, use mock data since Supabase tables might not be set up
-      // In production, this would query the actual database
-      const mockComments: Comment[] = [
-        {
-          id: '1',
-          userId: 'user1',
-          animeId: animeId,
-          content: 'Amazing anime! The character development is incredible and the animation quality is top-notch. Highly recommend watching this series.',
-          rating: 9,
-          likes: 15,
-          spoiler: false,
-          createdAt: new Date(Date.now() - 86400000), // 1 day ago
-          updatedAt: new Date(Date.now() - 86400000),
-          user: {
-            email: 'anime_fan@example.com',
-            displayName: 'AnimeFan2024',
-          },
-        },
-        {
-          id: '2',
-          userId: 'user2',
-          animeId: animeId,
-          content: 'Good story but the pacing could be better. Some episodes feel a bit slow, but overall worth watching.',
-          rating: 7,
-          likes: 8,
-          spoiler: false,
-          createdAt: new Date(Date.now() - 172800000), // 2 days ago
-          updatedAt: new Date(Date.now() - 172800000),
-          user: {
-            email: 'reviewer@example.com',
-            displayName: 'CriticalReviewer',
-          },
-        },
-        {
-          id: '3',
-          userId: 'user3',
-          animeId: animeId,
-          content: 'The ending was unexpected! I won\'t spoil it but definitely watch until the end.',
-          rating: 8,
-          likes: 12,
-          spoiler: true,
-          createdAt: new Date(Date.now() - 259200000), // 3 days ago
-          updatedAt: new Date(Date.now() - 259200000),
-          user: {
-            email: 'spoiler_user@example.com',
-            displayName: 'SpoilerAlert',
-          },
-        },
-      ]
-
-      // Apply sorting to mock data
-      let sortedComments = [...mockComments]
+      // Define sort order for database query
+      let orderColumn = 'created_at'
+      let ascending = false
+      
       switch (sortBy) {
         case 'newest':
-          sortedComments.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+          orderColumn = 'created_at'
+          ascending = false
           break
         case 'oldest':
-          sortedComments.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+          orderColumn = 'created_at'
+          ascending = true
           break
         case 'rating':
-          sortedComments.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+          orderColumn = 'rating'
+          ascending = false
           break
         case 'likes':
-          sortedComments.sort((a, b) => b.likes - a.likes)
+          orderColumn = 'likes'
+          ascending = false
           break
       }
 
-      setComments(sortedComments)
+      const { data: commentsData, error } = await supabase
+        .from('comments')
+        .select(`
+          id,
+          user_id,
+          anime_id,
+          content,
+          rating,
+          spoiler,
+          likes,
+          created_at,
+          updated_at,
+          moderation_status,
+          user_profiles (
+            email,
+            display_name
+          )
+        `)
+        .eq('anime_id', animeId)
+        .eq('moderation_status', 'approved')
+        .order(orderColumn, { ascending })
+
+      if (error) throw error
+
+      // Transform the data to match our Comment interface
+      const transformedComments: Comment[] = (commentsData || []).map((comment: any) => ({
+        id: comment.id,
+        userId: comment.user_id,
+        animeId: comment.anime_id,
+        content: comment.content,
+        rating: comment.rating,
+        spoiler: comment.spoiler,
+        likes: comment.likes,
+        createdAt: new Date(comment.created_at),
+        updatedAt: new Date(comment.updated_at),
+        user: {
+          email: comment.user_profiles?.email || 'Unknown',
+          displayName: comment.user_profiles?.display_name || null,
+        },
+      }))
+
+      setComments(transformedComments)
     } catch (error) {
       console.error('Failed to load comments:', error)
       setComments([]) // Set empty array on error
@@ -127,18 +125,43 @@ export function CommentsSection({ animeId, className }: CommentsSectionProps) {
 
     setIsSubmitting(true)
     try {
+      // Moderate content before submission
+      const moderationResult = await moderateComment({
+        id: `temp_${Date.now()}`,
+        content: newComment.trim(),
+        userId: user.id,
+        animeId,
+        spoiler: isSpoiler
+      })
+
+      // Check if content was rejected
+      if (!moderationResult.isApproved && moderationResult.suggestedAction === 'reject') {
+        alert(`Comment rejected: ${moderationResult.flags.map(f => f.details).join(', ')}`)
+        return
+      }
+
+      // Use moderated content if available
+      const finalContent = moderationResult.moderatedContent || newComment.trim()
+      const moderationStatus = moderationResult.suggestedAction === 'review' ? 'pending' : 'approved'
+
       const { error } = await supabase
         .from('comments')
         .insert({
           user_id: user.id,
           anime_id: animeId,
-          content: newComment.trim(),
+          content: finalContent,
           rating: newRating,
           spoiler: isSpoiler,
           likes: 0,
+          moderation_status: moderationStatus,
         })
 
       if (error) throw error
+
+      // Show message if content needs review
+      if (moderationStatus === 'pending') {
+        alert('Your comment has been submitted for review and will appear once approved.')
+      }
 
       // Reset form
       setNewComment('')
@@ -149,6 +172,7 @@ export function CommentsSection({ animeId, className }: CommentsSectionProps) {
       await loadComments()
     } catch (error) {
       console.error('Failed to submit comment:', error)
+      alert('Failed to submit comment. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

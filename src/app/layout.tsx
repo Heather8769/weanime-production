@@ -7,6 +7,7 @@ import { ErrorBoundary } from '@/components/error-boundary'
 import { ToastProvider } from '@/components/notifications/toast-system'
 import { PWAInstallPrompt, OfflineIndicator, UpdateAvailableNotification } from '@/components/pwa-install-prompt'
 import { ErrorCollectorProvider } from '@/components/error-collector-provider'
+import { FeedbackSystem } from '@/components/feedback-system'
 import { PerformanceMonitor } from '@/components/performance-monitor'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -52,6 +53,7 @@ export default function RootLayout({
                   </main>
                   <PWAInstallPrompt />
                   <UpdateAvailableNotification />
+                  <FeedbackSystem />
                 </div>
               </Providers>
             </ToastProvider>

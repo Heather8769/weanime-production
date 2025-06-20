@@ -6,6 +6,8 @@ import ReactPlayer from 'react-player'
 import { useWatchStore, Episode } from '@/lib/watch-store'
 import { VideoControls } from './video-controls'
 import { cn } from '@/lib/utils'
+import { videoStreamingOptimizer, getOptimizedPlayerConfig, preloadNextEpisode } from '@/lib/video-streaming-optimizer'
+import { performanceMonitor } from '@/lib/performance-monitor'
 
 interface VideoPlayerProps {
   episode: Episode
@@ -22,6 +24,8 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
   const [hasStarted, setHasStarted] = useState(false)
   const [hasError, setHasError] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
+  const [streamingMetrics, setStreamingMetrics] = useState(videoStreamingOptimizer.getMetrics())
+  const [optimizedConfig, setOptimizedConfig] = useState(getOptimizedPlayerConfig())
 
   const {
     currentTime,
@@ -132,6 +136,21 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [setFullscreen])
 
+  // Preload next episode for seamless playback
+  useEffect(() => {
+    const episodes = useWatchStore.getState().episodes
+    const currentIndex = episodes.findIndex(ep => ep.id === episode.id)
+    const nextEpisode = episodes[currentIndex + 1]
+
+    if (nextEpisode && nextEpisode.sources?.[0]?.url) {
+      // Preload when current episode is 80% complete
+      const preloadThreshold = duration * 0.8
+      if (currentTime > preloadThreshold && currentTime > 0) {
+        preloadNextEpisode(nextEpisode.sources[0].url)
+      }
+    }
+  }, [currentTime, duration, episode.id])
+
   // Auto-skip intro/outro
   useEffect(() => {
     if (!episode.skipTimes || !isPlaying) return
@@ -156,12 +175,32 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
     }
   }, [isReady, savedProgress, hasStarted])
 
-  const handleReady = () => {
+  const handleReady = useCallback(() => {
     console.log('Video player ready for episode:', episode.id)
     setIsReady(true)
     setHasError(false)
     setRetryCount(0)
-  }
+
+    // Initialize video performance monitoring
+    const videoElement = playerRef.current?.getInternalPlayer() as HTMLVideoElement
+    if (videoElement) {
+      const cleanup = videoStreamingOptimizer.monitorVideoPerformance(videoElement)
+
+      // Update metrics periodically
+      const metricsInterval = setInterval(() => {
+        setStreamingMetrics(videoStreamingOptimizer.getMetrics())
+      }, 2000)
+
+      // Store cleanup function for later use
+      ;(videoElement as any).__cleanupMonitoring = () => {
+        cleanup?.()
+        clearInterval(metricsInterval)
+      }
+    }
+
+    // Record startup performance
+    performanceMonitor.recordMetric('video-ready-time', Date.now() - (window as any).__videoStartTime || 0)
+  }, [episode.id])
 
   const handleStart = () => {
     setHasStarted(true)
@@ -334,13 +373,14 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
           config={{
             file: {
               attributes: {
+                ...optimizedConfig,
                 crossOrigin: 'anonymous',
-                preload: 'metadata',
                 playsInline: true,
               },
               // Skip subtitles to avoid CSP issues
               tracks: [],
               forceVideo: true,
+              hlsOptions: optimizedConfig.hlsConfig,
             },
           }}
           fallback={
@@ -373,12 +413,27 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
         </div>
       )}
 
+      {/* Performance Metrics (Debug Mode) */}
+      {process.env.NODE_ENV === 'development' && streamingMetrics && (
+        <div className="absolute top-4 right-4 glass-card p-2 text-xs text-white/80 max-w-xs">
+          <div>Quality: {streamingMetrics.playbackQuality}</div>
+          <div>Buffer: {streamingMetrics.bufferHealth.toFixed(1)}s</div>
+          <div>Bandwidth: {streamingMetrics.bandwidth.toFixed(1)} Mbps</div>
+          <div>Rebuffers: {streamingMetrics.rebufferingEvents}</div>
+          <div>Startup: {streamingMetrics.startupTime}ms</div>
+          {streamingMetrics.droppedFrames > 0 && (
+            <div className="text-yellow-400">Dropped: {streamingMetrics.droppedFrames}</div>
+          )}
+        </div>
+      )}
+
       {/* Loading Overlay */}
       {!isReady && !hasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50">
           <div className="flex items-center space-x-3 text-white">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             <span>Loading episode...</span>
+            <span className="text-white/60 text-sm">Optimizing for your connection...</span>
           </div>
         </div>
       )}

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { VideoPerformanceDashboard } from '@/components/video-performance-dashboard'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 interface HealthData {
   status: 'healthy' | 'degraded' | 'unhealthy'
@@ -152,6 +154,14 @@ export default function PerformanceDashboard() {
         </div>
       </div>
 
+      <Tabs defaultValue="system" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="system">System Performance</TabsTrigger>
+          <TabsTrigger value="video">Video Streaming</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="system" className="space-y-6">
+
       {/* Overall Status */}
       {healthData && (
         <Card>
@@ -287,6 +297,12 @@ export default function PerformanceDashboard() {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="video">
+          <VideoPerformanceDashboard />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
