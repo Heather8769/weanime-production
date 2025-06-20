@@ -339,7 +339,7 @@ export function BugReportTemplate({ onSubmit, onCancel, isSubmitting = false }: 
               <Label>Device Type</Label>
               <Select 
                 value={formData.environment.device} 
-                onValueChange={(value) => setFormData({
+                onValueChange={(value: string) => setFormData({
                   ...formData,
                   environment: { ...formData.environment, device: value }
                 })}
