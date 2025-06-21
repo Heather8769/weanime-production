@@ -1,7 +1,28 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { logPerformanceIssue } from '@/lib/error-collector'
+
+// Throttle function implementation (avoiding lodash dependency)
+function throttle<T extends (...args: any[]) => any>(func: T, delay: number): T {
+  let timeoutId: NodeJS.Timeout | null = null
+  let lastExecTime = 0
+
+  return ((...args: any[]) => {
+    const currentTime = Date.now()
+
+    if (currentTime - lastExecTime > delay) {
+      func(...args)
+      lastExecTime = currentTime
+    } else {
+      if (timeoutId) clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        func(...args)
+        lastExecTime = Date.now()
+      }, delay - (currentTime - lastExecTime))
+    }
+  }) as T
+}
 
 interface PerformanceMetrics {
   lcp?: number
@@ -12,12 +33,49 @@ interface PerformanceMetrics {
 }
 
 export function PerformanceMonitor() {
+  // Create throttled metrics sender according to fix guide
+  const sendMetrics = useCallback(
+    throttle((metrics: any) => {
+      fetch('/api/monitoring/error', {
+        method: 'POST',
+        body: JSON.stringify(metrics),
+        headers: { 'Content-Type': 'application/json' }
+      }).catch(error => {
+        console.warn('Failed to send performance metrics:', error)
+      })
+    }, 5000), // Limit to 1 request every 5 seconds as per fix guide
+    []
+  )
+
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    // Temporarily disable performance monitoring to prevent infinite loops
-    console.log('Performance monitoring temporarily disabled to prevent infinite loops')
-    return
+    // Enable performance monitoring with throttling to prevent infinite loops
+    console.log('Performance monitoring enabled with throttling (5s intervals)')
+
+    // Override the logPerformanceIssue to use throttled sending
+    const throttledLogPerformanceIssue = (metric: string, value: number, threshold: number, context: any) => {
+      const performanceData = {
+        level: 'warn',
+        message: `Performance issue: ${metric}`,
+        context: {
+          component: 'PerformanceMonitor',
+          metric,
+          value,
+          threshold,
+          ...context
+        },
+        performance: {
+          metric,
+          value,
+          threshold,
+          timestamp: Date.now()
+        },
+        tags: ['performance', 'monitoring']
+      }
+
+      sendMetrics(performanceData)
+    }
 
     // Monitor Core Web Vitals
     const observer = new PerformanceObserver((list) => {
@@ -26,7 +84,7 @@ export function PerformanceMonitor() {
           case 'largest-contentful-paint':
             const lcp = entry.startTime
             if (lcp > 2500) {
-              logPerformanceIssue('LCP', lcp, 2500, {
+              throttledLogPerformanceIssue('LCP', lcp, 2500, {
                 url: window.location.href,
                 element: (entry as any).element?.tagName
               })
@@ -36,7 +94,7 @@ export function PerformanceMonitor() {
           case 'first-input':
             const fid = (entry as any).processingStart - entry.startTime
             if (fid > 100) {
-              logPerformanceIssue('FID', fid, 100, {
+              throttledLogPerformanceIssue('FID', fid, 100, {
                 url: window.location.href,
                 target: (entry as any).target?.tagName
               })
@@ -47,7 +105,7 @@ export function PerformanceMonitor() {
             if (!(entry as any).hadRecentInput) {
               const cls = (entry as any).value
               if (cls > 0.1) {
-                logPerformanceIssue('CLS', cls, 0.1, {
+                throttledLogPerformanceIssue('CLS', cls, 0.1, {
                   url: window.location.href,
                   sources: (entry as any).sources?.map((s: any) => s.node?.tagName)
                 })
@@ -74,21 +132,21 @@ export function PerformanceMonitor() {
         const loadComplete = navigation.loadEventEnd - navigation.loadEventStart
 
         if (ttfb > 600) {
-          logPerformanceIssue('TTFB', ttfb, 600, {
+          throttledLogPerformanceIssue('TTFB', ttfb, 600, {
             url: window.location.href,
             type: 'navigation'
           })
         }
 
         if (domContentLoaded > 1000) {
-          logPerformanceIssue('DOM Content Loaded', domContentLoaded, 1000, {
+          throttledLogPerformanceIssue('DOM Content Loaded', domContentLoaded, 1000, {
             url: window.location.href,
             type: 'navigation'
           })
         }
 
         if (loadComplete > 2000) {
-          logPerformanceIssue('Load Complete', loadComplete, 2000, {
+          throttledLogPerformanceIssue('Load Complete', loadComplete, 2000, {
             url: window.location.href,
             type: 'navigation'
           })
@@ -107,7 +165,7 @@ export function PerformanceMonitor() {
     const longTaskObserver = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
         if (entry.duration > 50) {
-          logPerformanceIssue('Long Task', entry.duration, 50, {
+          throttledLogPerformanceIssue('Long Task', entry.duration, 50, {
             url: window.location.href,
             name: entry.name,
             type: 'long-task'
@@ -131,7 +189,7 @@ export function PerformanceMonitor() {
         const usagePercent = (usedMB / limitMB) * 100
 
         if (usagePercent > 80) {
-          logPerformanceIssue('Memory Usage', usagePercent, 80, {
+          throttledLogPerformanceIssue('Memory Usage', usagePercent, 80, {
             url: window.location.href,
             usedMB: Math.round(usedMB),
             limitMB: Math.round(limitMB),
@@ -168,10 +226,32 @@ export function usePerformanceTracking() {
       const loadTime = endTime - startTime
       
       if (loadTime > 1000) {
-        logPerformanceIssue(`${pageName} Load Time`, loadTime, 1000, {
-          url: window.location.href,
-          page: pageName,
-          type: 'page-load'
+        // Use direct API call for manual tracking to avoid circular dependencies
+        fetch('/api/monitoring/error', {
+          method: 'POST',
+          body: JSON.stringify({
+            level: 'warn',
+            message: `Performance issue: ${pageName} Load Time`,
+            context: {
+              component: 'PerformanceMonitor',
+              metric: `${pageName} Load Time`,
+              value: loadTime,
+              threshold: 1000,
+              url: window.location.href,
+              page: pageName,
+              type: 'page-load'
+            },
+            performance: {
+              metric: `${pageName} Load Time`,
+              value: loadTime,
+              threshold: 1000,
+              timestamp: Date.now()
+            },
+            tags: ['performance', 'page-load']
+          }),
+          headers: { 'Content-Type': 'application/json' }
+        }).catch(error => {
+          console.warn('Failed to send page load metrics:', error)
         })
       }
     }
@@ -185,10 +265,32 @@ export function usePerformanceTracking() {
       const duration = endTime - startTime
       
       if (duration > 2000) {
-        logPerformanceIssue(`API Call Duration`, duration, 2000, {
-          endpoint,
-          success,
-          type: 'api-call'
+        // Use direct API call for manual tracking to avoid circular dependencies
+        fetch('/api/monitoring/error', {
+          method: 'POST',
+          body: JSON.stringify({
+            level: 'warn',
+            message: `Performance issue: API Call Duration`,
+            context: {
+              component: 'PerformanceMonitor',
+              metric: 'API Call Duration',
+              value: duration,
+              threshold: 2000,
+              endpoint,
+              success,
+              type: 'api-call'
+            },
+            performance: {
+              metric: 'API Call Duration',
+              value: duration,
+              threshold: 2000,
+              timestamp: Date.now()
+            },
+            tags: ['performance', 'api-call']
+          }),
+          headers: { 'Content-Type': 'application/json' }
+        }).catch(error => {
+          console.warn('Failed to send API call metrics:', error)
         })
       }
     }

@@ -99,6 +99,11 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(handleImageRequest(request))
   } else if (isStaticAsset(request)) {
     event.respondWith(handleStaticRequest(request))
+  } else if (request.mode === 'navigate') {
+    // Fix guide implementation for navigation requests
+    event.respondWith(
+      caches.match('/index.html').catch(() => fetch(request))
+    )
   } else {
     event.respondWith(handleNavigationRequest(request))
   }

@@ -165,6 +165,56 @@ export interface Database {
           updated_at?: string
         }
       }
+      recent_episodes: {
+        Row: {
+          id: string
+          user_id: string
+          episode_id: string
+          anime_id: number | null
+          episode_number: number | null
+          episode_title: string | null
+          anime_title: string | null
+          thumbnail_url: string | null
+          progress_seconds: number
+          duration_seconds: number | null
+          completed: boolean
+          watched_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          episode_id: string
+          anime_id?: number | null
+          episode_number?: number | null
+          episode_title?: string | null
+          anime_title?: string | null
+          thumbnail_url?: string | null
+          progress_seconds?: number
+          duration_seconds?: number | null
+          completed?: boolean
+          watched_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          episode_id?: string
+          anime_id?: number | null
+          episode_number?: number | null
+          episode_title?: string | null
+          anime_title?: string | null
+          thumbnail_url?: string | null
+          progress_seconds?: number
+          duration_seconds?: number | null
+          completed?: boolean
+          watched_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
