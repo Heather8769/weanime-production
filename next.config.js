@@ -1,6 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['@supabase/supabase-js'],
+  // CRITICAL: Enable serverless target for Netlify
+  target: 'serverless',
+
+  // Memory and performance optimizations
+  experimental: {
+    outputFileTracingRoot: process.cwd(),
+    optimizeCss: true,
+    isrMemoryCacheSize: 0, // Disable to save memory
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+  },
+
+  // Essential settings
+  trailingSlash: true,
 
   // Enable TypeScript checking for production quality
   typescript: {
@@ -11,7 +23,7 @@ const nextConfig = {
     ignoreDuringBuilds: false,
   },
 
-  // Webpack configuration for better module resolution
+  // Webpack configuration for better module resolution AND memory optimization
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     // Ensure proper module resolution for @ alias
     config.resolve.alias = {
@@ -19,12 +31,17 @@ const nextConfig = {
       '@': require('path').resolve(__dirname, 'src'),
     }
 
-    return config
-  },
+    if (isServer && !dev) {
+      // Critical: Reduce server bundle size
+      config.optimization.splitChunks = false;
+      config.optimization.minimize = true;
+    }
 
-  // Performance optimizations
-  experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+    // Memory optimization
+    config.optimization.usedExports = true;
+    config.optimization.sideEffects = false;
+
+    return config
   },
 
   // Turbopack configuration (moved from experimental.turbo)
@@ -36,7 +53,10 @@ const nextConfig = {
       },
     },
   },
+  // Image optimization - optimized for serverless
   images: {
+    unoptimized: true, // Disable optimization to reduce memory usage
+    domains: ['s4.anilist.co', 'img1.ak.crunchyroll.com', 'cdn.myanimelist.net', 'commondatastorage.googleapis.com', 'i.ytimg.com'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -68,12 +88,7 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
-
-
     ],
-    formats: ['image/webp', 'image/avif'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   async headers() {
     return [
@@ -123,8 +138,17 @@ const nextConfig = {
 
 
 
-  // Trailing slash
-  trailingSlash: false,
+  // Trailing slash - CRITICAL: Set to true for serverless
+  trailingSlash: true,
+
+  // Runtime config for serverless optimization
+  serverRuntimeConfig: {
+    maxMemory: '1024mb',
+  },
+
+  publicRuntimeConfig: {
+    apiUrl: process.env.NEXT_PUBLIC_API_URL || '',
+  },
 }
 
 module.exports = nextConfig

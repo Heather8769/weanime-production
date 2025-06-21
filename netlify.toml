@@ -32,6 +32,12 @@
 # Next.js 15 + Netlify Plugin handles routing automatically
 # The @netlify/plugin-nextjs plugin manages all redirects and serverless functions
 
+# CRITICAL: Function configuration to fix instability
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@supabase/supabase-js", "sharp"]
+
+# Specific function configuration for serverless handler
+[functions."___netlify-server-handler"]
+  timeout = 30
+  memory = 1024
