@@ -34,5 +34,4 @@
 
 [functions]
   node_bundler = "esbuild"
-  timeout = 30
   external_node_modules = ["@supabase/supabase-js", "sharp"]
