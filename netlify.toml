@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "npm ci && npm run build"
   publish = ".next"
 
 [build.environment]
@@ -10,7 +10,9 @@
   NEXT_PUBLIC_BACKEND_URL = "https://weanime-backend-production.up.railway.app"
   NEXT_PUBLIC_CRUNCHYROLL_USERNAME = "gaklina1@maxpedia.cloud"
   NEXT_PUBLIC_CRUNCHYROLL_PASSWORD = "Watch123"
-  NODE_VERSION = "20"
+  NODE_VERSION = "20.19.2"
+  NPM_VERSION = "10.0.0"
+  NODE_ENV = "production"
 
 [[redirects]]
   from = "/*"
