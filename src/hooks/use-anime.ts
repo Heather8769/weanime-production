@@ -1,4 +1,5 @@
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import {
   searchAnime,
   getAnimeDetails,
@@ -69,9 +70,14 @@ export function useTrendingAnime() {
 
 // Get seasonal anime
 export function useSeasonalAnime(season?: string, year?: number) {
-  const currentDate = new Date()
-  const currentYear = year || currentDate.getFullYear()
-  const currentSeason = season || getCurrentSeason()
+  // Memoize the current date calculations to prevent infinite re-renders
+  const { currentYear, currentSeason } = useMemo(() => {
+    const currentDate = new Date()
+    return {
+      currentYear: year || currentDate.getFullYear(),
+      currentSeason: season || getCurrentSeason()
+    }
+  }, [season, year])
 
   return useInfiniteQuery({
     queryKey: ['anime', 'seasonal', currentSeason, currentYear],

@@ -15,6 +15,10 @@ export function PerformanceMonitor() {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    // Temporarily disable performance monitoring to prevent infinite loops
+    console.log('Performance monitoring temporarily disabled to prevent infinite loops')
+    return
+
     // Monitor Core Web Vitals
     const observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
@@ -28,7 +32,7 @@ export function PerformanceMonitor() {
               })
             }
             break
-            
+
           case 'first-input':
             const fid = (entry as any).processingStart - entry.startTime
             if (fid > 100) {
@@ -38,7 +42,7 @@ export function PerformanceMonitor() {
               })
             }
             break
-            
+
           case 'layout-shift':
             if (!(entry as any).hadRecentInput) {
               const cls = (entry as any).value

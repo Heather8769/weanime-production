@@ -1,0 +1,1 @@
+// Add to your WeAnime project const mcp = new WeAnimeMCPIntegration(); // When starting work: await mcp.startTask('Implement User Authentication'); // When AI provides feedback: await mcp.processAIFeedback(aiResponse, 'taskName'); // When completing work: await mcp.completeTask('Implement User Authentication');
