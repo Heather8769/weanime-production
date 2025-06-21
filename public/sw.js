@@ -329,7 +329,6 @@ async function handleNavigationRequest(request) {
     `, {
       headers: { 'Content-Type': 'text/html' }
     })
-  }
 }
 
 // Utility functions

@@ -103,7 +103,7 @@ export function HeroSection() {
       {/* Enhanced Background Image */}
       <div className="absolute inset-0">
         <AnimeBannerImage
-          src={featuredAnime.bannerImage || featuredAnime.coverImage.large}
+          src={featuredAnime.bannerImage || featuredAnime.coverImage?.large}
           alt={title}
           fill
           priority
@@ -204,7 +204,7 @@ export function HeroSection() {
             >
               <div className="glass-card rounded-xl p-2 glow-effect">
                 <AnimeCoverImage
-                  src={featuredAnime.coverImage.large}
+                  src={featuredAnime.coverImage?.large}
                   alt={title}
                   fill
                   className="rounded-lg"

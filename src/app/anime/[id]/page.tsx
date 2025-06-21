@@ -85,7 +85,7 @@ export default function AnimePage({ params }: AnimePageProps) {
       <div className="relative h-[60vh] overflow-hidden">
         {/* Background Image */}
         <Image
-          src={anime.bannerImage || anime.coverImage.large}
+          src={anime.bannerImage || anime.coverImage?.large}
           alt={title}
           fill
           sizes="100vw"
@@ -108,7 +108,7 @@ export default function AnimePage({ params }: AnimePageProps) {
                 className="relative aspect-[3/4] w-48 mx-auto md:mx-0"
               >
                 <Image
-                  src={anime.coverImage.large}
+                  src={anime.coverImage?.large}
                   alt={title}
                   fill
                   sizes="(max-width: 768px) 192px, 192px"
@@ -229,7 +229,7 @@ export default function AnimePage({ params }: AnimePageProps) {
                     >
                       <div className="relative aspect-[3/4] overflow-hidden rounded-lg">
                         <Image
-                          src={relation.node.coverImage.medium}
+                          src={relation.node.coverImage?.medium}
                           alt={relation.node.title.romaji}
                           fill
                           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"

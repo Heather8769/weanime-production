@@ -51,7 +51,7 @@ export function AnimeCard({
           {/* Cover Image */}
           <div className={cn('relative overflow-hidden', imageVariants[variant])}>
             <AnimeCoverImage
-              src={anime.coverImage.large || anime.coverImage.medium}
+              src={anime.coverImage?.large || anime.coverImage?.medium}
               alt={title}
               fill
               className="transition-transform duration-300 group-hover:scale-105"
@@ -160,7 +160,7 @@ export function FeaturedAnimeCard({ anime, className }: { anime: AniListAnime; c
         <div className="relative aspect-[16/9] overflow-hidden rounded-xl bg-muted">
           {/* Background Image */}
           <AnimeBannerImage
-            src={anime.bannerImage || anime.coverImage.large}
+            src={anime.bannerImage || anime.coverImage?.large}
             alt={title}
             fill
             className="transition-transform duration-300 group-hover:scale-[1.03]"
