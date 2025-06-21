@@ -41,7 +41,7 @@ export interface RealStreamingResponse {
   timestamp: string
 }
 
-const CRUNCHYROLL_BRIDGE_URL = process.env.NEXT_PUBLIC_CRUNCHYROLL_BRIDGE_URL || 'http://localhost:8081'
+const CRUNCHYROLL_BRIDGE_URL = process.env.CRUNCHYROLL_BRIDGE_URL || process.env.NEXT_PUBLIC_CRUNCHYROLL_BRIDGE_URL || 'http://localhost:8081'
 
 /**
  * Get real anime streaming data from Crunchyroll ONLY

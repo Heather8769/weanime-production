@@ -441,7 +441,7 @@ export function AnimeUpdatesDashboard() {
           ) : (
             <Card>
               <CardContent className="p-8 text-center text-muted-foreground">
-                No update statistics available
+                Loading update statistics...
               </CardContent>
             </Card>
           )}

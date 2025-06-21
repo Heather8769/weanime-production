@@ -120,7 +120,7 @@ async function checkRateLimiterHealth() {
     return {
       status: healthyApis >= 4 ? 'healthy' : healthyApis > 0 ? 'degraded' : 'unhealthy',
       details: {
-        availableApis: 5, // AniList, Jikan, Crunchyroll, Archive.org, WeAnime Backend
+        availableApis: 4, // AniList, Jikan, Crunchyroll, WeAnime Backend
         rateLimitedApis: totalApis - healthyApis,
         totalRequests: Object.values(status).reduce((sum: number, api: any) => sum + (api.requests || 0), 0),
         failedRequests: Object.values(status).reduce((sum: number, api: any) => sum + (api.failures || 0), 0),

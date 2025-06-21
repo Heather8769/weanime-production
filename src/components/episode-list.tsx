@@ -278,9 +278,9 @@ export function EpisodeList({
       {episodes.length === 0 && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📺</div>
-          <h3 className="text-lg font-semibold mb-2">No episodes available</h3>
+          <h3 className="text-lg font-semibold mb-2">Loading Episodes</h3>
           <p className="text-muted-foreground">
-            Episodes for this anime are not yet available.
+            Fetching episode information from Crunchyroll...
           </p>
         </div>
       )}

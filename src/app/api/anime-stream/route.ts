@@ -67,6 +67,8 @@ async function getStreamFromAniwatch(episodeId: string): Promise<StreamingSource
       }))
     }
 
+    // Return empty array with proper logging when no streams found
+    console.log(`No Aniwatch streaming sources found for episode: ${episodeId}`)
     return []
   } catch (error) {
     console.error('Aniwatch streaming error:', error)

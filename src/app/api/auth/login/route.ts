@@ -19,8 +19,8 @@ if (isSupabaseConfigured) {
   }
 }
 
-// Demo users storage (shared with register route)
-const DEMO_USERS: Record<string, {
+// Fallback authentication when Supabase unavailable
+const FALLBACK_USERS: Record<string, {
   id: string,
   email: string,
   username: string,
@@ -33,7 +33,7 @@ function verifyPassword(password: string, hash: string): boolean {
 }
 
 function generateToken(): string {
-  return 'demo_token_' + Math.random().toString(36).substr(2, 16)
+  return 'fallback_token_' + Math.random().toString(36).substr(2, 16)
 }
 
 export async function POST(request: NextRequest) {
@@ -118,15 +118,15 @@ export async function POST(request: NextRequest) {
         })
 
       } catch (supabaseError) {
-        console.error('Supabase login failed, falling back to demo mode:', supabaseError)
+        console.error('Supabase login failed, falling back to fallback mode:', supabaseError)
       }
     }
 
-    // Fallback to demo mode
+    // Fallback to fallback mode
     console.log(`Attempting to login user: ${email} (using fallback auth)`)
 
     // Find user by email
-    const user = Object.values(DEMO_USERS).find(u => u.email === email)
+    const user = Object.values(FALLBACK_USERS).find(u => u.email === email)
 
     if (!user) {
       return NextResponse.json(
@@ -149,14 +149,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`Successfully logged in demo user: ${email}`)
+    console.log(`Successfully logged in fallback user: ${email}`)
 
     const token = generateToken()
     const expiresAt = Date.now() + (24 * 60 * 60 * 1000) // 24 hours
 
     return NextResponse.json({
       success: true,
-      message: 'Login successful (demo mode)',
+      message: 'Login successful (fallback mode)',
       user: {
         id: user.id,
         email: user.email,

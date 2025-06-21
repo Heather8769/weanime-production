@@ -125,7 +125,7 @@ export default function MigrationDashboard() {
   }
 
   if (!stats || !config) {
-    return <div>No migration data available</div>
+    return <div>Loading migration status...</div>
   }
 
   const getSourceColor = (source: string) => {

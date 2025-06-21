@@ -109,7 +109,23 @@
       "Bash(railway:*)",
       "Bash(supabase:*)",
       "WebFetch(domain:weanime-production.netlify.app)",
-      "Bash(grep -n \"BigBuckBunny\\|commondatastorage\\.googleapis\\.com\" /Users/shigeo/Desktop/weanime/src/lib/real-video-service.ts)"
+      "Bash(grep -n \"BigBuckBunny\\|commondatastorage\\.googleapis\\.com\" /Users/shigeo/Desktop/weanime/src/lib/real-video-service.ts)",
+      "mcp__desktop-commander__search_code",
+      "mcp__toolbox-filesystem__search_servers",
+      "mcp__supabase__list_tables",
+      "mcp__desktop-commander__search_files",
+      "mcp__github__list_commits",
+      "mcp__netlify__netlify-project-services",
+      "mcp__mem0-memory-mcp__add-memory",
+      "mcp__server-sequential-thinking__sequentialthinking",
+      "mcp__desktop-commander__edit_block",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__get_advisors",
+      "mcp__playwright-mcp__browser_network_requests",
+      "mcp__playwright-mcp__browser_console_messages",
+      "mcp__desktop-commander__write_file",
+      "mcp__netlify__netlify-deploy-services",
+      "Bash(npx netlify deploy:*)"
     ],
     "deny": []
   }

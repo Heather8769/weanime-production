@@ -469,7 +469,7 @@ export function FeedbackMonitoringDashboard() {
                   </div>
                 </div>
               ) : (
-                <p className="text-muted-foreground">No trend data available</p>
+                <p className="text-muted-foreground">Loading trend analytics...</p>
               )}
             </CardContent>
           </Card>

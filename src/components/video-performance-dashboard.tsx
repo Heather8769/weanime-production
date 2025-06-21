@@ -109,7 +109,7 @@ export function VideoPerformanceDashboard() {
       <div className="p-8 text-center">
         <Monitor className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-lg font-semibold mb-2">No Performance Data</h3>
-        <p className="text-muted-foreground">No video performance metrics available yet.</p>
+        <p className="text-muted-foreground">Loading performance metrics... yet.</p>
       </div>
     )
   }

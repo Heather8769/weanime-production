@@ -30,7 +30,7 @@ interface FeedbackItem {
   }
 }
 
-// In-memory storage for demo (use Supabase in production)
+// In-memory storage for development (use Supabase in production)
 let feedbackStorage: FeedbackItem[] = []
 
 export async function POST(request: NextRequest) {

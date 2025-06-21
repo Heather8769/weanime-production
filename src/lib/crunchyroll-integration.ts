@@ -57,7 +57,7 @@ class CrunchyrollIntegration {
   constructor() {
     const config = getEnvConfig()
     // Use the Crunchyroll Bridge service instead of direct API
-    this.baseUrl = config.streaming.crunchyroll.url || 'http://localhost:8081'
+    this.baseUrl = config.streaming.crunchyroll.bridgeUrl || 'http://localhost:8081'
     this.apiKey = config.streaming.crunchyroll.key
   }
 

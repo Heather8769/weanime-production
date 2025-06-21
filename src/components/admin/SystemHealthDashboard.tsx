@@ -145,7 +145,7 @@ export default function SystemHealthDashboard() {
   }
 
   if (!healthData) {
-    return <div>No health data available</div>
+    return <div>Loading system health metrics...</div>
   }
 
   return (

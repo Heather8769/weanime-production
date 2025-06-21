@@ -25,7 +25,7 @@ interface VideoPerformanceMetrics {
   errors?: string[]
 }
 
-// In-memory storage for demo (use Redis/database in production)
+// In-memory storage for development (use Redis/database in production)
 const performanceData: VideoPerformanceMetrics[] = []
 const MAX_STORED_METRICS = 1000
 

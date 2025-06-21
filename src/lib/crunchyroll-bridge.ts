@@ -1,155 +1,166 @@
-import { spawn, ChildProcess } from 'child_process'
-import { getEnvConfig } from './env-validation'
-import path from 'path'
+import { spawn } from 'child_process'
+import { promisify } from 'util'
 
-export interface CrunchyrollSearchResult {
+interface CrunchyrollEpisodeInfo {
   id: string
   title: string
-  description?: string
-  poster?: string
-  series_type: string
-  episode_count?: number
-}
-
-export interface CrunchyrollEpisodeInfo {
-  id: string
-  title: string
-  episode_number?: number
-  season_number?: number
+  episode_number: number
+  season_number: number
   series_title: string
-  description?: string
-  duration_ms?: number
+  description: string
+  duration_ms: number
   thumbnail?: string
-  stream_url?: string
-  subtitles: string[]
-  audio_locale?: string
+  subtitles: SubtitleTrack[]
+  audio_locale: string
 }
 
-export interface CrunchyrollStreamingSource {
+interface CrunchyrollStreamingSource {
   url: string
   quality: string
-  format: string
-  audio_locale?: string
-  hardsub_locale?: string
+  type: 'hls' | 'dash'
+  language: string
+  subtitles?: SubtitleTrack[]
 }
 
-export class CrunchyrollBridgeService {
-  private bridgePath: string
-  private config: ReturnType<typeof getEnvConfig>
+interface SubtitleTrack {
+  language: string
+  url: string
+  format: 'vtt' | 'srt'
+}
 
-  constructor() {
-    this.config = getEnvConfig()
-    // Path to the compiled Rust binary
-    this.bridgePath = path.join(process.cwd(), 'crunchyroll-bridge', 'target', 'release', 'crunchyroll-cli')
+interface CrunchyrollSeries {
+  id: string
+  title: string
+  description: string
+  poster_tall?: string
+  poster_wide?: string
+  episodes: CrunchyrollEpisodeInfo[]
+  total_episodes: number
+}
+
+/**
+ * Crunchyroll Bridge Client
+ * Communicates with the Rust-based Crunchyroll bridge service
+ */
+export class CrunchyrollBridge {
+  private bridgeUrl: string
+  private maxRetries: number = 3
+
+  constructor(bridgeUrl: string = 'http://localhost:8081') {
+    this.bridgeUrl = bridgeUrl
   }
 
+  /**
+   * Execute a command on the Crunchyroll bridge service
+   */
   private async executeBridgeCommand(args: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
-      const env = {
-        ...process.env,
-        CRUNCHYROLL_EMAIL: this.config.streaming.crunchyroll.email,
-        CRUNCHYROLL_PASSWORD: this.config.streaming.crunchyroll.password,
-        RUST_LOG: 'info'
-      }
+      const process = spawn('curl', [
+        '-X', 'POST',
+        '-H', 'Content-Type: application/json',
+        '-d', JSON.stringify({ command: args }),
+        `${this.bridgeUrl}/execute`
+      ])
 
-      const child = spawn(this.bridgePath, args, {
-        env,
-        stdio: ['pipe', 'pipe', 'pipe']
+      let output = ''
+      let error = ''
+
+      process.stdout.on('data', (data) => {
+        output += data.toString()
       })
 
-      let stdout = ''
-      let stderr = ''
-
-      child.stdout?.on('data', (data) => {
-        stdout += data.toString()
+      process.stderr.on('data', (data) => {
+        error += data.toString()
       })
 
-      child.stderr?.on('data', (data) => {
-        stderr += data.toString()
-      })
-
-      child.on('close', (code) => {
+      process.on('close', (code) => {
         if (code === 0) {
-          resolve(stdout)
+          resolve(output.trim())
         } else {
-          reject(new Error(`Bridge command failed with code ${code}: ${stderr}`))
+          reject(new Error(`Bridge command failed: ${error}`))
         }
-      })
-
-      child.on('error', (error) => {
-        reject(new Error(`Failed to execute bridge command: ${error.message}`))
       })
     })
   }
 
-  async isAvailable(): Promise<boolean> {
+  /**
+   * Test connection to the bridge service
+   */
+  async testConnection(): Promise<boolean> {
     try {
-      // Check if the bridge binary exists and is executable
-      const fs = await import('fs/promises')
-      await fs.access(this.bridgePath, fs.constants.F_OK | fs.constants.X_OK)
+      await this.executeBridgeCommand(['health'])
       return true
-    } catch {
+    } catch (error) {
+      console.error('Bridge connection test failed:', error)
       return false
     }
   }
 
-  async testLogin(): Promise<boolean> {
+  /**
+   * Login to Crunchyroll through the bridge
+   */
+  async login(email: string, password: string): Promise<boolean> {
     try {
-      await this.executeBridgeCommand(['login', '--email', this.config.streaming.crunchyroll.email, '--password', this.config.streaming.crunchyroll.password])
-      return true
+      const result = await this.executeBridgeCommand(['login', email, password])
+      return result.includes('success')
     } catch (error) {
-      console.error('Crunchyroll login test failed:', error)
+      console.error('Bridge login failed:', error)
       return false
     }
   }
 
-  async searchSeries(query: string, limit: number = 10): Promise<CrunchyrollSearchResult[]> {
+  /**
+   * Search for anime series
+   */
+  async searchSeries(query: string): Promise<CrunchyrollSeries[]> {
     try {
-      const output = await this.executeBridgeCommand(['search', query, '--limit', limit.toString()])
-      
-      // Parse the CLI output (this is a simple parser for the current format)
-      const lines = output.split('\n').filter(line => line.trim())
-      const results: CrunchyrollSearchResult[] = []
-      
-      for (const line of lines) {
-        if (line.match(/^\d+\./)) {
-          // Extract series info from CLI output format
-          const match = line.match(/^\d+\.\s+(.+?)\s+\(ID:\s+(.+?)\)/)
-          if (match) {
-            results.push({
-              id: match[2],
-              title: match[1],
-              description: 'Crunchyroll series',
-              series_type: 'series',
-              episode_count: 24 // Default for now
-            })
-          }
-        }
-      }
-      
-      return results
+      const output = await this.executeBridgeCommand(['search', query])
+      const searchResults = JSON.parse(output)
+      return searchResults.series || []
     } catch (error) {
-      console.error('Crunchyroll search failed:', error)
+      console.error('Bridge search failed:', error)
       return []
     }
   }
 
+  /**
+   * Get series information
+   */
+  async getSeriesInfo(seriesId: string): Promise<CrunchyrollSeries | null> {
+    try {
+      const output = await this.executeBridgeCommand(['series', seriesId])
+      const seriesData = JSON.parse(output)
+      return seriesData
+    } catch (error) {
+      console.error('Failed to get series info:', error)
+      return null
+    }
+  }
+
+  /**
+   * Get episode information
+   */
   async getEpisodeInfo(episodeId: string): Promise<CrunchyrollEpisodeInfo | null> {
     try {
       const output = await this.executeBridgeCommand(['episode', episodeId])
       
-      // For now, return mock data since we're using the mock implementation
-      return {
-        id: episodeId,
-        title: 'Crunchyroll Episode',
-        episode_number: 1,
-        season_number: 1,
-        series_title: 'Crunchyroll Series',
-        description: 'Episode from Crunchyroll',
-        duration_ms: 1440000, // 24 minutes
-        thumbnail: 'https://example.com/thumbnail.jpg',
-        subtitles: [],
-        audio_locale: 'en-US'
+      // Parse actual Crunchyroll response
+      if (output && output.length > 0) {
+        const episodeData = JSON.parse(output)
+        return {
+          id: episodeData.id || episodeId,
+          title: episodeData.title || 'Crunchyroll Episode',
+          episode_number: episodeData.episode_number || 1,
+          season_number: episodeData.season_number || 1,
+          series_title: episodeData.series_title || 'Crunchyroll Series',
+          description: episodeData.description || 'Episode from Crunchyroll',
+          duration_ms: episodeData.duration_ms || 1440000,
+          thumbnail: episodeData.thumbnail || null,
+          subtitles: [],
+          audio_locale: 'en-US'
+        }
+      } else {
+        return null
       }
     } catch (error) {
       console.error('Failed to get episode info:', error)
@@ -157,90 +168,31 @@ export class CrunchyrollBridgeService {
     }
   }
 
+  /**
+   * Get streaming sources for an episode
+   */
   async getStreamingSources(episodeId: string): Promise<CrunchyrollStreamingSource[]> {
     try {
       const output = await this.executeBridgeCommand(['stream', episodeId])
-
-      // LEGACY METHOD - DEPRECATED
-      // This method is no longer used in production
-      // Real streaming is handled by the HTTP bridge service
-      console.warn('getStreamingSources is deprecated - use HTTP bridge service instead')
-
+      const streamData = JSON.parse(output)
+      
+      if (streamData.sources && Array.isArray(streamData.sources)) {
+        return streamData.sources.map((source: any) => ({
+          url: source.url,
+          quality: source.quality || '1080p',
+          type: source.type || 'hls',
+          language: source.language || 'en-US',
+          subtitles: source.subtitles || []
+        }))
+      }
+      
       return []
     } catch (error) {
       console.error('Failed to get streaming sources:', error)
       return []
     }
   }
-
-  async mapMalToCrunchyroll(malId: number): Promise<string | null> {
-    try {
-      const output = await this.executeBridgeCommand(['map-mal', malId.toString()])
-      
-      // Parse the output to extract Crunchyroll ID
-      const match = output.match(/Crunchyroll ID:\s*(.+)/)
-      return match ? match[1].trim() : null
-    } catch (error) {
-      console.error('Failed to map MAL to Crunchyroll:', error)
-      return null
-    }
-  }
-
-  async getSeriesInfo(seriesId: string): Promise<any> {
-    try {
-      const output = await this.executeBridgeCommand(['series', seriesId])
-
-      // LEGACY METHOD - DEPRECATED
-      // This method is no longer used in production
-      // Real series info is handled by the HTTP bridge service
-      console.warn('getSeriesInfo is deprecated - use HTTP bridge service instead')
-
-      return null
-    } catch (error) {
-      console.error('Failed to get series info:', error)
-      return null
-    }
-  }
-
-  getStatus(): { available: boolean; configured: boolean } {
-    return {
-      available: true, // We'll check this async in the health endpoint
-      configured: !!(this.config.streaming.crunchyroll.email && this.config.streaming.crunchyroll.password)
-    }
-  }
 }
 
-// Singleton instance
-let bridgeService: CrunchyrollBridgeService | null = null
-
-export function getCrunchyrollBridge(): CrunchyrollBridgeService {
-  if (!bridgeService) {
-    bridgeService = new CrunchyrollBridgeService()
-  }
-  return bridgeService
-}
-
-// Helper function to check if Crunchyroll integration is enabled and working
-export async function isCrunchyrollAvailable(): Promise<boolean> {
-  try {
-    const config = getEnvConfig()
-    if (!config.streaming.crunchyroll.enabled) {
-      return false
-    }
-
-    const bridge = getCrunchyrollBridge()
-    return await bridge.isAvailable()
-  } catch {
-    return false
-  }
-}
-
-// Helper function to test Crunchyroll login
-export async function testCrunchyrollLogin(): Promise<boolean> {
-  try {
-    const bridge = getCrunchyrollBridge()
-    return await bridge.testLogin()
-  } catch {
-    return false
-  }
-}
+// Export default instance
+export default new CrunchyrollBridge()

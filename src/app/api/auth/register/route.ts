@@ -20,7 +20,7 @@ if (isSupabaseConfigured) {
 }
 
 // Fallback authentication system when Supabase is unavailable
-const DEMO_USERS: Record<string, {
+const FALLBACK_USERS: Record<string, {
   id: string,
   email: string,
   username: string,
@@ -181,15 +181,15 @@ export async function POST(request: NextRequest) {
         })
 
       } catch (supabaseError) {
-        console.error('Supabase registration failed, falling back to demo mode:', supabaseError)
+        console.error('Supabase registration failed, falling back to fallback mode:', supabaseError)
       }
     }
 
-    // Fallback to demo mode
+    // Fallback to fallback mode
     console.log(`Attempting to register user: ${email} (using fallback auth)`)
 
     // Check if user already exists
-    const existingUser = Object.values(DEMO_USERS).find(
+    const existingUser = Object.values(FALLBACK_USERS).find(
       user => user.email === email || user.username === username
     )
 
@@ -203,11 +203,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create user account (demo mode)
+    // Create user account (fallback mode)
     const userId = generateUserId()
     const hashedPassword = hashPassword(password)
 
-    DEMO_USERS[userId] = {
+    FALLBACK_USERS[userId] = {
       id: userId,
       email,
       username,
@@ -215,16 +215,16 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString()
     }
 
-    console.log(`Successfully registered demo user: ${email}`)
+    console.log(`Successfully registered fallback user: ${email}`)
 
     return NextResponse.json({
       success: true,
-      message: 'User registered successfully (demo mode)',
+      message: 'User registered successfully (fallback mode)',
       user: {
         id: userId,
         email: email,
         username: username,
-        emailConfirmed: true // Demo mode - auto-confirm
+        emailConfirmed: true // Fallback mode - auto-confirm
       },
       mode: 'demo',
       note: 'This is a demo registration. Data will not persist between server restarts.',

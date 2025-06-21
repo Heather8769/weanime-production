@@ -115,6 +115,8 @@ async function fetchFromKitsu(animeId: string): Promise<AnimeEpisode[]> {
       }))
     }
 
+    // Return empty array with proper logging when no episodes found
+    console.log(`No episodes found for anime ID: ${animeId}`)
     return []
   } catch (error) {
     console.error('Kitsu API error:', error)

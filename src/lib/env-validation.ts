@@ -18,7 +18,7 @@ const envSchema = z.object({
   CRUNCHYROLL_EMAIL: z.string().email().optional(),
   CRUNCHYROLL_PASSWORD: z.string().optional(),
   CRUNCHYROLL_LOCALE: z.string().optional(),
-  CRUNCHYROLL_BRIDGE_URL: z.string().url().default('http://localhost:8080'),
+  CRUNCHYROLL_BRIDGE_URL: z.string().url().default('http://localhost:8081'),
   FUNIMATION_API_URL: z.string().url().optional(),
   FUNIMATION_API_KEY: z.string().optional(),
   YOUTUBE_API_KEY: z.string().optional(),
