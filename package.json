@@ -40,6 +40,10 @@
     "docker:run": "docker run -p 3000:3000 weanime",
     "analyze": "cross-env ANALYZE=true next build",
     "clean": "rm -rf .next out dist build",
+    "validate-imports": "node scripts/import-validator.js",
+    "recover-missing": "node scripts/recovery-assistant.js",
+    "deploy-safe": "node scripts/deploy-with-recovery.js",
+    "prebuild": "node scripts/import-validator.js || true",
     "postinstall": "echo 'Skipping db:generate in production deployment'",
     "deploy:staging": "bash scripts/deploy-staging.sh",
     "deploy:production": "bash scripts/deploy-production.sh"
