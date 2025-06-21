@@ -3,16 +3,24 @@
 
 [build]
   command = "npm ci && npm run build"
-  publish = ".next"
 
 [build.environment]
   NEXT_PUBLIC_SUPABASE_URL = "https://zwvilprhyvzwcrhkyhjy.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3dmlscHJoeXZ6d2NyaGt5aGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg2MjQ5MDcsImV4cCI6MjA2NDIwMDkwN30.a311f_FWXppFGTmASz3k7P76ymq1JLJk15oskuII2LA"
-
-  NEXT_PUBLIC_DISCORD_CLIENT_ID = "1385764062146859058"
-  NEXT_PUBLIC_BACKEND_URL = "https://weanime-backend-production.up.railway.app"
-  # Crunchyroll credentials are now securely configured as environment variables
-  # CRUNCHYROLL_EMAIL and CRUNCHYROLL_PASSWORD are set in Netlify dashboard
+  
+  # Feature flags
+  NEXT_PUBLIC_ENABLE_REAL_CRUNCHYROLL = "true"
+  NEXT_PUBLIC_ENABLE_MOCK_DATA = "false"
+  NEXT_PUBLIC_REAL_STREAMING_ONLY = "true"
+  
+  # API Configuration
+  ANILIST_API_URL = "https://graphql.anilist.co"
+  JIKAN_API_URL = "https://api.jikan.moe/v4"
+  
+  # Crunchyroll Bridge (Supabase Edge Function)
+  CRUNCHYROLL_BRIDGE_URL = "https://zwvilprhyvzwcrhkyhjy.supabase.co/functions/v1/crunchyroll-bridge"
+  
+  # Build environment
   NODE_VERSION = "20"
   NPM_VERSION = "10"
   NODE_ENV = "production"

@@ -9,6 +9,10 @@ interface ErrorData {
   message: string
   stack?: string
   url?: string
+  userAgent?: string
+  environment?: string
+  deployment?: 'netlify' | 'local' | 'unknown'
+  timestamp?: string
   metadata?: Record<string, any>
 }
 
@@ -119,9 +123,14 @@ class ErrorCollector {
       return
     }
 
-    const enrichedError: ErrorData = {
+    // Add deployment context
+    const enhancedError: ErrorData = {
       ...errorData,
-      url: errorData.url || (typeof window !== 'undefined' ? window.location.href : undefined),
+      timestamp: new Date().toISOString(),
+      userAgent: typeof window !== 'undefined' ? window.navigator?.userAgent : undefined,
+      environment: process.env.NODE_ENV,
+      deployment: this.detectDeployment(),
+      url: errorData.url || (typeof window !== 'undefined' ? window.location?.href : undefined),
       metadata: {
         ...errorData.metadata,
         timestamp: Date.now(),
@@ -130,7 +139,7 @@ class ErrorCollector {
       }
     }
 
-    this.queue.push(enrichedError)
+    this.queue.push(enhancedError)
 
     // If queue is getting large, flush immediately
     if (this.queue.length >= 10) {
@@ -186,6 +195,19 @@ class ErrorCollector {
     }
 
     return 'low'
+  }
+
+  private detectDeployment(): 'netlify' | 'local' | 'unknown' {
+    if (typeof window === 'undefined') return 'unknown'
+    
+    const hostname = window.location.hostname
+    if (hostname.includes('netlify.app') || hostname.includes('weanime.live')) {
+      return 'netlify'
+    }
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'local'
+    }
+    return 'unknown'
   }
 
   private async flush() {

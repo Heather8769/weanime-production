@@ -125,7 +125,10 @@
       "mcp__playwright-mcp__browser_console_messages",
       "mcp__desktop-commander__write_file",
       "mcp__netlify__netlify-deploy-services",
-      "Bash(npx netlify deploy:*)"
+      "Bash(npx netlify deploy:*)",
+      "mcp__github__search_repositories",
+      "mcp__github__get_file_contents",
+      "mcp__supabase__deploy_edge_function"
     ],
     "deny": []
   }
