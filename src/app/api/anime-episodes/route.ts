@@ -263,18 +263,18 @@ export async function GET(request: NextRequest) {
     }
 
     if (episodes.length === 0) {
-      // Try real episode service instead of fallback data
-      console.log(`Trying real episode service for anime ${animeId}`)
+      // Try episode service instead of fallback data
+      console.log(`Trying episode service for anime ${animeId}`)
       try {
-        const { getRealEpisodes } = await import('@/lib/real-episode-service')
-        const realEpisodes = await getRealEpisodes(String(animeId))
-        
+        const { getAnimeEpisodes } = await import('@/lib/episode-service')
+        const realEpisodes = await getAnimeEpisodes(parseInt(animeId))
+
         if (realEpisodes && realEpisodes.length > 0) {
-          console.log(`Found ${realEpisodes.length} real episodes for anime ${animeId}`)
+          console.log(`Found ${realEpisodes.length} episodes for anime ${animeId}`)
           return NextResponse.json({
             success: true,
             animeId,
-            episodes: realEpisodes.map(ep => ({
+            episodes: realEpisodes.map((ep: any) => ({
               id: ep.id,
               number: ep.number,
               title: ep.title,
@@ -290,7 +290,7 @@ export async function GET(request: NextRequest) {
           })
         }
       } catch (realEpisodeError) {
-        console.warn('Real episode service also failed:', realEpisodeError)
+        console.warn('Episode service also failed:', realEpisodeError)
       }
 
       return NextResponse.json(

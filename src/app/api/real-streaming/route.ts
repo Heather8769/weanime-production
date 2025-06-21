@@ -51,58 +51,59 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get real video streaming sources
+    // Get video streaming sources
     try {
-      const { getRealStreamingSources } = await import('@/lib/real-episode-service')
-      const realSources = await getRealStreamingSources(episodeNumber.toString(), quality)
-      const filteredSources = RealVideoService.filterRealVideoSources(realSources)
-      const qualityOptions = RealVideoService.getSupportedRealQualities()
-      
-      if (filteredSources.length === 0) {
+      const { getEpisodeWithVideoSources } = await import('@/lib/episode-service')
+      const episodeWithSources = await getEpisodeWithVideoSources(parseInt(animeId), parseInt(episodeNumber))
+
+      if (!episodeWithSources || !episodeWithSources.sources || episodeWithSources.sources.length === 0) {
         return NextResponse.json(
           {
             success: false,
-            error: 'No real streaming sources available',
-            message: 'Real Crunchyroll stream not available for this episode'
+            error: 'No streaming sources available',
+            message: 'Stream not available for this episode'
           },
           { status: 404 }
         )
       }
 
+      const sources = episodeWithSources.sources
+      const primarySource = sources[0]
+
       return NextResponse.json({
         success: true,
         animeId,
         episodeNumber,
-        streamUrl: filteredSources[0]?.url,
-        quality: filteredSources[0]?.quality || quality,
-        isM3U8: true, // Real Crunchyroll streams are typically HLS
+        streamUrl: primarySource.url,
+        quality: primarySource.quality || quality,
+        isM3U8: primarySource.type === 'hls',
         animeTitle: typeof animeInfo === 'object' && 'title' in animeInfo ? animeInfo.title : `Anime ${animeId}`,
         animeGenre: 'Unknown',
         totalEpisodes: 0,
 
-        // Real streaming features
-        realSources: filteredSources,
-        qualityOptions: qualityOptions.map(q => ({
-          quality: q,
-          url: filteredSources.find(s => s.quality === q)?.url || filteredSources[0]?.url,
-          isReal: true
+        // Streaming features
+        realSources: sources,
+        qualityOptions: sources.map(s => ({
+          quality: s.quality,
+          url: s.url,
+          isReal: s.isReal || true
         })),
 
-        // Real subtitle support  
-        subtitles: [],
+        // Subtitle support
+        subtitles: episodeWithSources.subtitles || [],
 
-        source: 'crunchyroll-real-streaming',
+        source: 'crunchyroll-streaming',
         sourceType: 'real',
         timestamp: new Date().toISOString()
       })
 
-    } catch (realStreamError) {
-      console.warn('Real streaming service failed:', realStreamError)
+    } catch (streamError) {
+      console.warn('Streaming service failed:', streamError)
       return NextResponse.json(
         {
           success: false,
-          error: 'Real streaming unavailable',
-          message: 'Unable to access real Crunchyroll streaming'
+          error: 'Streaming unavailable',
+          message: 'Unable to access streaming'
         },
         { status: 503 }
       )
