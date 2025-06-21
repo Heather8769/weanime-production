@@ -11,9 +11,10 @@ const voteStorage: Record<string, Record<string, 'up' | 'down'>> = {}
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params
     const feedbackId = params.id
     const { vote, userId }: VoteRequest = await request.json()
 
@@ -126,9 +127,10 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params
     const feedbackId = params.id
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
