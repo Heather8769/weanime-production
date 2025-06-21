@@ -11,8 +11,17 @@ const path = require('path')
 const REQUIRED_COMPONENTS = [
   'src/components/anime-updates-dashboard.tsx',
   'src/components/feedback-monitoring-dashboard.tsx',
+  'src/components/feedback-admin-dashboard.tsx',
   'src/lib/comprehensive-diagnostics.ts',
   'src/lib/auto-fix-engine.ts'
+]
+
+const INDEX_FILES = [
+  'src/components/anime-updates-dashboard/index.ts',
+  'src/components/feedback-monitoring-dashboard/index.ts',
+  'src/components/feedback-admin-dashboard/index.ts',
+  'src/lib/comprehensive-diagnostics/index.ts',
+  'src/lib/auto-fix-engine/index.ts'
 ]
 
 const COMPONENT_STUBS = {
@@ -33,6 +42,17 @@ export function FeedbackMonitoringDashboard() {
   return (
     <div className="p-8 text-center">
       <h2 className="text-2xl font-bold mb-4">Feedback Monitoring Dashboard</h2>
+      <p className="text-muted-foreground">Dashboard is being initialized...</p>
+    </div>
+  )
+}`,
+
+  'src/components/feedback-admin-dashboard.tsx': `'use client'
+
+export function FeedbackAdminDashboard() {
+  return (
+    <div className="p-8 text-center">
+      <h2 className="text-2xl font-bold mb-4">Feedback Admin Dashboard</h2>
       <p className="text-muted-foreground">Dashboard is being initialized...</p>
     </div>
   )
@@ -111,23 +131,64 @@ function createStubIfMissing(filePath) {
   }
 }
 
+function createIndexFile(indexPath, targetPath) {
+  if (!fs.existsSync(indexPath)) {
+    ensureDirectoryExists(indexPath)
+
+    const relativePath = path.relative(path.dirname(indexPath), targetPath.replace('.tsx', '').replace('.ts', ''))
+    let content = ''
+
+    if (indexPath.includes('components')) {
+      const componentName = path.basename(targetPath, '.tsx')
+      const pascalName = componentName.split('-').map(word =>
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join('')
+      content = `export { ${pascalName} } from '${relativePath}'`
+    } else {
+      content = `export * from '${relativePath}'`
+    }
+
+    fs.writeFileSync(indexPath, content)
+    console.log(`✅ Created index file: ${indexPath}`)
+    return true
+  }
+  return false
+}
+
 function main() {
   console.log('🔧 Running deployment recovery...')
-  
+
   let stubsCreated = 0
-  
+  let indexesCreated = 0
+
+  // Check and create missing components
   for (const component of REQUIRED_COMPONENTS) {
     if (createStubIfMissing(component)) {
       stubsCreated++
     }
   }
-  
+
+  // Create index files for better module resolution
+  for (let i = 0; i < INDEX_FILES.length; i++) {
+    const indexFile = INDEX_FILES[i]
+    const componentFile = REQUIRED_COMPONENTS[i]
+    if (createIndexFile(indexFile, componentFile)) {
+      indexesCreated++
+    }
+  }
+
   if (stubsCreated > 0) {
     console.log(`\n🎯 Created ${stubsCreated} stub(s) for missing components`)
   } else {
     console.log('\n✅ All required components exist')
   }
-  
+
+  if (indexesCreated > 0) {
+    console.log(`📁 Created ${indexesCreated} index file(s) for better module resolution`)
+  } else {
+    console.log('📁 All index files exist')
+  }
+
   console.log('🚀 Deployment recovery complete')
 }
 
