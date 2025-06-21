@@ -87,11 +87,14 @@ export function AnimeImage({
 
   // Handle image load error
   const handleError = useCallback(() => {
-    console.log(`Image failed to load: ${currentSrc || src}`)
+    // Only log errors for non-fallback images to reduce console spam
+    if (src && !src.includes('placeholder') && !src.includes('fallback') && !src.includes('data:image')) {
+      console.warn(`AnimeImage: Failed to load image: ${currentSrc || src}`)
+    }
+
     if (!hasError) {
       setHasError(true)
       const fallback = getFallbackSrc()
-      console.log(`Trying fallback: ${fallback}`)
 
       // If the fallback is different from current src, try it
       if (fallback !== currentSrc) {
@@ -102,7 +105,6 @@ export function AnimeImage({
       // If fallback also fails, use placeholder
       if (width && height) {
         const placeholder = generatePlaceholderUrl(width, height, alt)
-        console.log(`Using placeholder: ${placeholder}`)
         setCurrentSrc(placeholder)
       }
     }

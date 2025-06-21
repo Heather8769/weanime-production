@@ -208,38 +208,84 @@ async function handleStaticRequest(request) {
 
 // Handle navigation requests with network-first, fallback to cache
 async function handleNavigationRequest(request) {
-  try {
-    // Try network first
-    const networkResponse = await fetch(request)
-    
-    if (networkResponse.ok) {
-      // Only cache non-partial responses (avoid 206 status code errors)
-      if (networkResponse.status !== 206) {
-        try {
-          const cache = await caches.open(DYNAMIC_CACHE)
-          await cache.put(request, networkResponse.clone())
-        } catch (cacheError) {
-          console.warn('Service Worker: Failed to cache response:', cacheError)
+  const url = new URL(request.url)
+
+  // For navigation requests, always try to serve the main app
+  if (request.mode === 'navigate') {
+    try {
+      // Try network first
+      const networkResponse = await fetch(request)
+
+      if (networkResponse.ok) {
+        // Only cache non-partial responses (avoid 206 status code errors)
+        if (networkResponse.status !== 206) {
+          try {
+            const cache = await caches.open(DYNAMIC_CACHE)
+            await cache.put(request, networkResponse.clone())
+          } catch (cacheError) {
+            console.warn('Service Worker: Failed to cache response:', cacheError)
+          }
         }
+        return networkResponse
       }
-      return networkResponse
+
+      throw new Error('Network response not ok')
+    } catch (error) {
+      console.log('Service Worker: Network failed for navigation:', request.url)
+
+      // For navigation requests, try to serve the main app from cache
+      const mainAppResponse = await caches.match('/')
+      if (mainAppResponse) {
+        return mainAppResponse
+      }
+
+      // Try cache for the specific route
+      const cachedResponse = await caches.match(request)
+      if (cachedResponse) {
+        return cachedResponse
+      }
+
+      // Fallback to offline page
+      const offlineResponse = await caches.match('/offline')
+      if (offlineResponse) {
+        return offlineResponse
+      }
     }
-    
-    throw new Error('Network response not ok')
-  } catch (error) {
-    console.log('Service Worker: Network failed for navigation:', request.url)
-    
-    // Try cache
-    const cachedResponse = await caches.match(request)
-    if (cachedResponse) {
-      return cachedResponse
+  } else {
+    try {
+      // Try network first for non-navigation requests
+      const networkResponse = await fetch(request)
+
+      if (networkResponse.ok) {
+        // Only cache non-partial responses (avoid 206 status code errors)
+        if (networkResponse.status !== 206) {
+          try {
+            const cache = await caches.open(DYNAMIC_CACHE)
+            await cache.put(request, networkResponse.clone())
+          } catch (cacheError) {
+            console.warn('Service Worker: Failed to cache response:', cacheError)
+          }
+        }
+        return networkResponse
+      }
+
+      throw new Error('Network response not ok')
+    } catch (error) {
+      console.log('Service Worker: Network failed for navigation:', request.url)
+
+      // Try cache
+      const cachedResponse = await caches.match(request)
+      if (cachedResponse) {
+        return cachedResponse
+      }
+
+      // Fallback to offline page
+      const offlineResponse = await caches.match('/offline')
+      if (offlineResponse) {
+        return offlineResponse
+      }
     }
-    
-    // Fallback to offline page
-    const offlineResponse = await caches.match('/offline')
-    if (offlineResponse) {
-      return offlineResponse
-    }
+  }
     
     // Last resort - basic offline page
     return new Response(`
