@@ -29,17 +29,8 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Routing Configuration for Next.js Serverless Functions
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/___netlify-server-handler"
-  status = 200
-
-# SPA fallback for client-side routing
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/___netlify-server-handler"
-  status = 200
+# Next.js 15 + Netlify Plugin handles routing automatically
+# The @netlify/plugin-nextjs plugin manages all redirects and serverless functions
 
 [functions]
   node_bundler = "esbuild"
