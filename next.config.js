@@ -1,13 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // CRITICAL: Enable serverless target for Netlify
-  target: 'serverless',
-
-  // Memory and performance optimizations
+  // Memory and performance optimizations for serverless
   experimental: {
-    outputFileTracingRoot: process.cwd(),
-    optimizeCss: true,
-    isrMemoryCacheSize: 0, // Disable to save memory
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
   },
 
@@ -138,17 +132,8 @@ const nextConfig = {
 
 
 
-  // Trailing slash - CRITICAL: Set to true for serverless
+  // Trailing slash - optimized for deployment
   trailingSlash: true,
-
-  // Runtime config for serverless optimization
-  serverRuntimeConfig: {
-    maxMemory: '1024mb',
-  },
-
-  publicRuntimeConfig: {
-    apiUrl: process.env.NEXT_PUBLIC_API_URL || '',
-  },
 }
 
 module.exports = nextConfig
