@@ -1,11 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Memory and performance optimizations for serverless
+  // FALLBACK: Static export for reliable deployment
+  output: 'export',
+
+  // Memory and performance optimizations
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
   },
 
-  // Essential settings
+  // Essential settings for static export
   trailingSlash: true,
 
   // Enable TypeScript checking for production quality
@@ -47,10 +50,9 @@ const nextConfig = {
       },
     },
   },
-  // Image optimization - optimized for serverless
+  // Image optimization - required for static export
   images: {
-    unoptimized: true, // Disable optimization to reduce memory usage
-    domains: ['s4.anilist.co', 'img1.ak.crunchyroll.com', 'cdn.myanimelist.net', 'commondatastorage.googleapis.com', 'i.ytimg.com'],
+    unoptimized: true, // Required for static export
     remotePatterns: [
       {
         protocol: 'https',

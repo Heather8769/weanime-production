@@ -3,6 +3,7 @@
 
 [build]
   command = "npm ci && npm run build"
+  publish = "out"
 
 [build.environment]
   NEXT_PUBLIC_SUPABASE_URL = "https://zwvilprhyvzwcrhkyhjy.supabase.co"
@@ -25,19 +26,8 @@
   NPM_VERSION = "10"
   NODE_ENV = "production"
 
-# Next.js 15 + Netlify Plugin Configuration
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
-# Next.js 15 + Netlify Plugin handles routing automatically
-# The @netlify/plugin-nextjs plugin manages all redirects and serverless functions
-
-# CRITICAL: Function configuration to fix instability
-[functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["@supabase/supabase-js", "sharp"]
-
-# Specific function configuration for serverless handler
-[functions."___netlify-server-handler"]
-  timeout = 30
-  memory = 1024
+# Static site redirects for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
