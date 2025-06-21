@@ -147,7 +147,7 @@ class ErrorCollector {
     }
 
     // For critical errors, flush immediately
-    if (enrichedError.metadata?.severity === 'critical') {
+    if (enhancedError.metadata?.severity === 'critical') {
       this.flush()
     }
   }
