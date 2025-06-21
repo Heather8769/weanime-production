@@ -44,6 +44,80 @@ export interface Database {
           updated_at?: string
         }
       }
+      anime: {
+        Row: {
+          id: number
+          title_english: string | null
+          title_romaji: string | null
+          title_native: string | null
+          description: string | null
+          cover_image_large: string | null
+          cover_image_medium: string | null
+          banner_image: string | null
+          average_score: number | null
+          episodes: number | null
+          status: string | null
+          season: string | null
+          season_year: number | null
+          genres: string[] | null
+          studios: string[] | null
+          start_date: string | null
+          end_date: string | null
+          popularity: number | null
+          trending_rank: number | null
+          is_adult: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          title_english?: string | null
+          title_romaji?: string | null
+          title_native?: string | null
+          description?: string | null
+          cover_image_large?: string | null
+          cover_image_medium?: string | null
+          banner_image?: string | null
+          average_score?: number | null
+          episodes?: number | null
+          status?: string | null
+          season?: string | null
+          season_year?: number | null
+          genres?: string[] | null
+          studios?: string[] | null
+          start_date?: string | null
+          end_date?: string | null
+          popularity?: number | null
+          trending_rank?: number | null
+          is_adult?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          title_english?: string | null
+          title_romaji?: string | null
+          title_native?: string | null
+          description?: string | null
+          cover_image_large?: string | null
+          cover_image_medium?: string | null
+          banner_image?: string | null
+          average_score?: number | null
+          episodes?: number | null
+          status?: string | null
+          season?: string | null
+          season_year?: number | null
+          genres?: string[] | null
+          studios?: string[] | null
+          start_date?: string | null
+          end_date?: string | null
+          popularity?: number | null
+          trending_rank?: number | null
+          is_adult?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
       watchlist: {
         Row: {
           id: string
@@ -91,88 +165,6 @@ export interface Database {
           updated_at?: string
         }
       }
-      watch_progress: {
-        Row: {
-          id: string
-          user_id: string
-          anime_id: number
-          episode_id: string
-          episode_number: number
-          progress_seconds: number
-          duration_seconds: number
-          completed: boolean
-          last_watched: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          anime_id: number
-          episode_id: string
-          episode_number: number
-          progress_seconds?: number
-          duration_seconds?: number
-          completed?: boolean
-          last_watched?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          anime_id?: number
-          episode_id?: string
-          episode_number?: number
-          progress_seconds?: number
-          duration_seconds?: number
-          completed?: boolean
-          last_watched?: string
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      comments: {
-        Row: {
-          id: string
-          user_id: string
-          anime_id: number | null
-          episode_id: string | null
-          parent_id: string | null
-          content: string
-          is_spoiler: boolean
-          upvotes: number
-          downvotes: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          anime_id?: number | null
-          episode_id?: string | null
-          parent_id?: string | null
-          content: string
-          is_spoiler?: boolean
-          upvotes?: number
-          downvotes?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          anime_id?: number | null
-          episode_id?: string | null
-          parent_id?: string | null
-          content?: string
-          is_spoiler?: boolean
-          upvotes?: number
-          downvotes?: number
-          created_at?: string
-          updated_at?: string
-        }
-      }
     }
     Views: {
       [_ in never]: never
@@ -181,7 +173,7 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      watchlist_status: 'watching' | 'completed' | 'dropped' | 'plan_to_watch' | 'on_hold'
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never

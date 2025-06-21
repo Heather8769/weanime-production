@@ -1,4 +1,6 @@
-# WeAnime Production Build Configuration - Updated 2025-01-21
+# WeAnime Production Build Configuration - Updated 2025-06-21
+# Optimized for Next.js 15 + Netlify deployment
+
 [build]
   command = "npm ci && npm run build"
   publish = ".next"
@@ -11,19 +13,26 @@
   NEXT_PUBLIC_BACKEND_URL = "https://weanime-backend-production.up.railway.app"
   NEXT_PUBLIC_CRUNCHYROLL_USERNAME = "gaklina1@maxpedia.cloud"
   NEXT_PUBLIC_CRUNCHYROLL_PASSWORD = "Watch123"
-  NODE_VERSION = "20.19.2"
-  NPM_VERSION = "10.0.0"
+  NODE_VERSION = "20"
+  NPM_VERSION = "10"
   NODE_ENV = "production"
 
+# Next.js 15 + Netlify Plugin Configuration
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# API Routes handled by Next.js serverless functions
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/___netlify-server-handler"
   status = 200
 
+# SPA fallback for client-side routing
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/.netlify/functions/___netlify-server-handler"
   status = 200
 
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["@supabase/supabase-js", "sharp"]

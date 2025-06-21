@@ -94,18 +94,49 @@ class ErrorMonitoring {
   }
 
   private async sendToMonitoringService(report: ErrorReport) {
-    try {
-      // This would send to your monitoring service (Sentry, LogRocket, etc.)
-      await fetch('/api/monitoring/error', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(report),
-      })
-    } catch (error) {
-      console.error('Failed to send error to monitoring service:', error)
+    // Multiple fallback endpoints for error logging
+    const endpoints = [
+      '/api/errors',
+      '/api/monitoring/error',
+      '/api/health',
+      '/.netlify/functions/___netlify-server-handler/api/errors'
+    ]
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...report,
+            endpoint_attempted: endpoint,
+            deployment_context: 'netlify-production'
+          }),
+        })
+
+        if (response.ok) {
+          console.log(`✅ Error logged to ${endpoint}`)
+          return // Success, stop trying other endpoints
+        } else {
+          console.warn(`⚠️ Failed to log to ${endpoint}: ${response.status}`)
+        }
+      } catch (error) {
+        console.error(`❌ Network error logging to ${endpoint}:`, error)
+      }
     }
+
+    // If all endpoints fail, log to console with enhanced details
+    console.error('🚨 ALL ERROR ENDPOINTS FAILED - Error details:', {
+      ...report,
+      deployment_info: {
+        timestamp: new Date().toISOString(),
+        user_agent: navigator.userAgent,
+        url: window.location.href,
+        build_id: process.env.NEXT_PUBLIC_BUILD_ID || 'unknown'
+      }
+    })
   }
 
   private storeLocalError(report: ErrorReport) {
