@@ -98,8 +98,8 @@ const nextConfig = {
     ]
   },
 
-  // Output configuration for Docker
-  output: 'standalone',
+  // Output configuration optimized for Netlify deployment
+  // Removed 'standalone' to enable proper Netlify Functions conversion
 
   // Compression
   compress: true,
