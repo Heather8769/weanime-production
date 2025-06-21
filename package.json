@@ -43,7 +43,7 @@
     "validate-imports": "node scripts/import-validator.js",
     "recover-missing": "node scripts/recovery-assistant.js",
     "deploy-safe": "node scripts/deploy-with-recovery.js",
-    "prebuild": "node scripts/import-validator.js || true",
+    "prebuild": "node scripts/deployment-recovery.js && node scripts/import-validator.js || true",
     "postinstall": "echo 'Skipping db:generate in production deployment'",
     "deploy:staging": "bash scripts/deploy-staging.sh",
     "deploy:production": "bash scripts/deploy-production.sh"
@@ -73,21 +73,21 @@
     "react-player": "^2.13.0",
     "tailwind-merge": "^2.2.0",
     "zod": "^3.25.63",
-    "zustand": "^4.4.7"
+    "zustand": "^4.4.7",
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "@tailwindcss/typography": "^0.5.10"
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.11.3",
-    "@tailwindcss/typography": "^0.5.10",
     "@types/node": "^20.10.6",
     "@types/react": "^18.2.46",
     "@types/react-dom": "^18.2.18",
-    "autoprefixer": "^10.4.16",
     "cross-env": "^7.0.3",
     "dotenv": "^16.5.0",
     "eslint": "^8.56.0",
     "eslint-config-next": "^15.3.3",
-    "postcss": "^8.4.32",
-    "tailwindcss": "^3.4.0",
     "typescript": "^5.3.3",
     "webpack-bundle-analyzer": "^4.10.2"
   },
