@@ -9,6 +9,7 @@ import { PWAInstallPrompt, OfflineIndicator, UpdateAvailableNotification } from 
 import { ErrorCollectorProvider } from '@/components/error-collector-provider'
 import { FeedbackSystem } from '@/components/feedback-system'
 import { PerformanceMonitor } from '@/components/performance-monitor'
+import { DiagnosticsProvider } from '@/components/diagnostics-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -42,8 +43,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <ErrorBoundary>
           <ErrorCollectorProvider>
-            <PerformanceMonitor />
-            <ToastProvider>
+            <DiagnosticsProvider>
+              <PerformanceMonitor />
+              <ToastProvider>
               <Providers>
                 <div className="min-h-screen bg-background animated-bg">
                   <OfflineIndicator />
@@ -56,7 +58,8 @@ export default function RootLayout({
                   <FeedbackSystem />
                 </div>
               </Providers>
-            </ToastProvider>
+              </ToastProvider>
+            </DiagnosticsProvider>
           </ErrorCollectorProvider>
         </ErrorBoundary>
       </body>
