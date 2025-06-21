@@ -172,7 +172,7 @@ class AnimeDatabaseUpdater {
     // For now, return simulated data structure
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_CRUNCHYROLL_BRIDGE_URL}/new-releases`, {
+      const response = await fetch(`${process.env.CRUNCHYROLL_BRIDGE_URL || 'http://localhost:8081'}/new-releases`, {
         headers: {
           'Authorization': `Bearer ${process.env.CRUNCHYROLL_API_TOKEN}`,
           'Content-Type': 'application/json'

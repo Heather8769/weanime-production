@@ -11,8 +11,8 @@
 
   NEXT_PUBLIC_DISCORD_CLIENT_ID = "1385764062146859058"
   NEXT_PUBLIC_BACKEND_URL = "https://weanime-backend-production.up.railway.app"
-  CRUNCHYROLL_EMAIL = "gaklina1@maxpedia.cloud"
-  CRUNCHYROLL_PASSWORD = "Watch123"
+  # Crunchyroll credentials are now securely configured as environment variables
+  # CRUNCHYROLL_EMAIL and CRUNCHYROLL_PASSWORD are set in Netlify dashboard
   NODE_VERSION = "20"
   NPM_VERSION = "10"
   NODE_ENV = "production"

@@ -22,8 +22,8 @@ if ! command -v cargo &> /dev/null; then
 fi
 
 # Check for required environment variables
-if [ -z "$CRUNCHYROLL_USERNAME" ] || [ -z "$CRUNCHYROLL_PASSWORD" ]; then
-    echo -e "${YELLOW}⚠️  Warning: CRUNCHYROLL_USERNAME and CRUNCHYROLL_PASSWORD environment variables not set${NC}"
+if [ -z "$CRUNCHYROLL_EMAIL" ] || [ -z "$CRUNCHYROLL_PASSWORD" ]; then
+    echo -e "${YELLOW}⚠️  Warning: CRUNCHYROLL_EMAIL and CRUNCHYROLL_PASSWORD environment variables not set${NC}"
     echo -e "${BLUE}💡 Set them in your .env file or environment${NC}"
 fi
 

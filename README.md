@@ -61,7 +61,8 @@ A modern anime streaming platform built with Next.js 15, featuring a beautiful g
 
    # Service URLs (for local development)
    NEXT_PUBLIC_BACKEND_URL=http://localhost:8003
-   NEXT_PUBLIC_CRUNCHYROLL_BRIDGE_URL=http://localhost:8081
+   # Crunchyroll Bridge URL is server-side only for security
+   CRUNCHYROLL_BRIDGE_URL=http://localhost:8081
    ```
 
 4. **Run the development server**

@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     const [frontendHealth, backendHealth, bridgeHealth, anilistHealth] = await Promise.all([
       checkServiceHealth(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/health`),
       checkServiceHealth(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8003'}/health`),
-      checkServiceHealth(`${process.env.NEXT_PUBLIC_CRUNCHYROLL_BRIDGE_URL || 'http://localhost:8081'}/health`),
+      checkServiceHealth(`${process.env.CRUNCHYROLL_BRIDGE_URL || 'http://localhost:8081'}/health`),
       checkServiceHealth('https://graphql.anilist.co', 3000)
     ])
     
