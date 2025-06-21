@@ -1,18 +1,23 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import { getEnvConfig } from './env-validation'
 import type { Database } from '@/types/database.types'
 
-// Get validated environment configuration
-const envConfig = getEnvConfig()
-
-// Use fallback values for development if Supabase is not configured
-const supabaseUrl = envConfig.supabase.url || 'https://placeholder.supabase.co'
-const supabaseAnonKey = envConfig.supabase.anonKey || 'placeholder-anon-key'
+// Get Supabase configuration directly from environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // Check if Supabase is properly configured
-const isSupabaseConfigured = !!(envConfig.supabase.url && envConfig.supabase.anonKey)
+const isSupabaseConfigured = !!(
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co' &&
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'placeholder-anon-key'
+)
 
 if (!isSupabaseConfigured && process.env.NODE_ENV === 'production') {
+  console.error('Supabase configuration check failed:')
+  console.error('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT SET')
+  console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET')
   throw new Error(
     'Missing required Supabase configuration in production. Please check your environment variables:\n' +
     '- NEXT_PUBLIC_SUPABASE_URL\n' +
@@ -50,13 +55,13 @@ export function createClient() {
 
 // Export createServiceClient for server-side operations
 export function createServiceClient() {
-  if (!envConfig.supabase.serviceRoleKey) {
+  if (!supabaseServiceRoleKey) {
     throw new Error('Service role key not configured')
   }
 
   return createSupabaseClient<Database>(
     supabaseUrl,
-    envConfig.supabase.serviceRoleKey,
+    supabaseServiceRoleKey,
     {
       auth: {
         autoRefreshToken: false,
