@@ -111,9 +111,9 @@ export class ComprehensiveDiagnostics {
       } catch (error) {
         this.logError({
           type: 'network_error',
-          message: `Network error: ${error.message}`,
+          message: `Network error: ${error instanceof Error ? error.message : String(error)}`,
           url: args[0],
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
           timestamp: new Date().toISOString()
         })
         throw error
@@ -180,6 +180,8 @@ export class ComprehensiveDiagnostics {
    * Send error to monitoring API
    */
   private async sendToMonitoring(error: any) {
+    if (typeof window === 'undefined') return
+
     try {
       await fetch('/api/monitoring/error', {
         method: 'POST',
@@ -571,4 +573,3 @@ export class ComprehensiveDiagnostics {
 
 // Global diagnostics instance
 export const diagnostics = new ComprehensiveDiagnostics()
-}

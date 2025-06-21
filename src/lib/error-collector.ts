@@ -189,7 +189,7 @@ class ErrorCollector {
   }
 
   private async flush() {
-    if (this.queue.length === 0) return
+    if (this.queue.length === 0 || typeof window === 'undefined') return
 
     const errorsToSend = [...this.queue]
     this.queue = []

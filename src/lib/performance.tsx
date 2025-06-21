@@ -96,6 +96,8 @@ class PerformanceMonitoring {
   }
 
   private async sendMetricToAnalytics(metric: PerformanceMetric) {
+    if (typeof window === 'undefined') return
+
     try {
       // Send to your analytics service
       await fetch('/api/analytics/performance', {
