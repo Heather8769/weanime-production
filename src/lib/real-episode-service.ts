@@ -197,69 +197,17 @@ export async function getEpisodeWithVideoSources(animeId: number, episodeNumber:
       }
     }
     
-    console.log(`Episode service: No real sources found, creating fallback episode`)
+    console.log(`Episode service: No real sources found for anime ${animeId} episode ${episodeNumber}`)
     
-    // Fallback: Create episode with demo sources
-    const episode: Episode = {
-      id: `${animeId}-${episodeNumber}`,
-      number: episodeNumber,
-      title: `Episode ${episodeNumber}`,
-      description: `Episode ${episodeNumber} of this anime series.`,
-      thumbnail: undefined,
-      duration: 1440, // 24 minutes
-      sources: [
-        {
-          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-          quality: '720p',
-          type: 'mp4',
-          language: 'sub',
-          isReal: false,
-          source: 'demo'
-        }
-      ],
-      subtitles: [
-        {
-          url: '',
-          language: 'en',
-          label: 'English',
-          default: true,
-          isReal: false,
-          source: 'demo'
-        }
-      ],
-      isReal: false,
-      source: 'fallback'
-    }
-    
-    return episode
+    // No fallback - return null when real content is unavailable
+    return null
     
   } catch (error) {
     console.error('Episode service: Error getting video sources:', error)
     
-    // Emergency fallback
-    const episode: Episode = {
-      id: `${animeId}-${episodeNumber}`,
-      number: episodeNumber,
-      title: `Episode ${episodeNumber}`,
-      description: `Episode ${episodeNumber} of this anime series.`,
-      thumbnail: undefined,
-      duration: 1440,
-      sources: [
-        {
-          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-          quality: '720p',
-          type: 'mp4',
-          language: 'sub',
-          isReal: false,
-          source: 'demo'
-        }
-      ],
-      subtitles: [],
-      isReal: false,
-      source: 'fallback'
-    }
-    
-    return episode
+    // No fallback content - return null when real content is unavailable
+    console.error(`Episode service: Failed to get real episode for anime ${animeId} episode ${episodeNumber}:`, error)
+    return null
   }
 }
 
@@ -349,41 +297,5 @@ export function validateEpisode(episode: any): episode is Episode {
   )
 }
 
-/**
- * Helper function to create a fallback episode
- * @param animeId - Anime ID
- * @param episodeNumber - Episode number
- * @returns Fallback episode
- */
-export function createFallbackEpisode(animeId: number, episodeNumber: number): Episode {
-  return {
-    id: `${animeId}-${episodeNumber}`,
-    number: episodeNumber,
-    title: `Episode ${episodeNumber}`,
-    description: `Episode ${episodeNumber} of this anime series.`,
-    thumbnail: undefined,
-    duration: 1440, // 24 minutes
-    sources: [
-      {
-        url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-        quality: '720p',
-        type: 'mp4',
-        language: 'sub',
-        isReal: false,
-        source: 'demo'
-      }
-    ],
-    subtitles: [
-      {
-        url: '',
-        language: 'en',
-        label: 'English',
-        default: true,
-        isReal: false,
-        source: 'demo'
-      }
-    ],
-    isReal: false,
-    source: 'fallback'
-  }
-}
+// createFallbackEpisode function removed - zero tolerance for mock/demo content
+// Components should handle null return values and show appropriate error messages

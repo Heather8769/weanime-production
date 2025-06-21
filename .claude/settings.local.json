@@ -107,7 +107,9 @@
       "Bash(railway login:*)",
       "Bash(railway create:*)",
       "Bash(railway:*)",
-      "Bash(supabase:*)"
+      "Bash(supabase:*)",
+      "WebFetch(domain:weanime-production.netlify.app)",
+      "Bash(grep -n \"BigBuckBunny\\|commondatastorage\\.googleapis\\.com\" /Users/shigeo/Desktop/weanime/src/lib/real-video-service.ts)"
     ],
     "deny": []
   }

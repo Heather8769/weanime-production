@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -64,11 +64,7 @@ export function FeedbackAdminDashboard() {
   })
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null)
 
-  useEffect(() => {
-    loadFeedback()
-  }, [filter])
-
-  const loadFeedback = async () => {
+  const loadFeedback = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -88,7 +84,11 @@ export function FeedbackAdminDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filter])
+
+  useEffect(() => {
+    loadFeedback()
+  }, [loadFeedback])
 
   const updateFeedbackStatus = async (feedbackId: string, newStatus: FeedbackItem['status']) => {
     try {

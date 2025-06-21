@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -43,7 +43,7 @@ export function VideoPerformanceDashboard() {
   const [timeframe, setTimeframe] = useState('24h')
   const [error, setError] = useState<string | null>(null)
 
-  const fetchPerformanceData = async () => {
+  const fetchPerformanceData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -62,7 +62,7 @@ export function VideoPerformanceDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [timeframe])
 
   useEffect(() => {
     fetchPerformanceData()
@@ -70,7 +70,7 @@ export function VideoPerformanceDashboard() {
     // Auto-refresh every 30 seconds
     const interval = setInterval(fetchPerformanceData, 30000)
     return () => clearInterval(interval)
-  }, [timeframe])
+  }, [timeframe, fetchPerformanceData])
 
   const getPerformanceColor = (score: number) => {
     if (score >= 90) return 'text-green-500'

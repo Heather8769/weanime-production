@@ -237,12 +237,29 @@ export default function DiagnosticsPage() {
                           )}
                         </div>
                         {issue.autoFixAvailable && (
-                          <button
-                            onClick={() => autoFixIssue(issue)}
-                            className="ml-4 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-                          >
-                            Auto-Fix
-                          </button>
+                          <div className="ml-4 flex flex-col items-end space-y-2">
+                            <button
+                              onClick={() => autoFixIssue(issue, index)}
+                              disabled={fixingIssues.has(index)}
+                              className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 disabled:opacity-50"
+                            >
+                              {fixingIssues.has(index) ? 'Fixing...' : 'Auto-Fix'}
+                            </button>
+                            {fixResults.has(index) && (
+                              <div className={`text-xs p-2 rounded ${
+                                fixResults.get(index)?.success
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {fixResults.get(index)?.message}
+                                {fixResults.get(index)?.details && (
+                                  <div className="mt-1 text-xs opacity-75">
+                                    {fixResults.get(index)?.details}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>

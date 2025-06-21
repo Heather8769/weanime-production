@@ -56,7 +56,8 @@ class CrunchyrollIntegration {
 
   constructor() {
     const config = getEnvConfig()
-    this.baseUrl = config.streaming.crunchyroll.url || 'https://api.crunchyroll.com'
+    // Use the Crunchyroll Bridge service instead of direct API
+    this.baseUrl = config.streaming.crunchyroll.url || 'http://localhost:8081'
     this.apiKey = config.streaming.crunchyroll.key
   }
 
@@ -117,13 +118,28 @@ class CrunchyrollIntegration {
     }
 
     try {
-      // Implementation would use real Crunchyroll API
-      // For now, return enhanced demo data that matches real structure
-      const results = await this.fetchFromCrunchyrollAPI(`/search?q=${encodeURIComponent(query)}`)
+      // Use real Crunchyroll Bridge service
+      const sessionToken = await this.getSessionToken()
+      const results = await this.fetchFromCrunchyrollBridge('/search', {
+        q: query,
+        session_token: sessionToken,
+        limit: 20
+      })
+      
+      // Transform bridge response to expected format
+      const transformedResults: CrunchyrollSeries[] = results.results.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description || '',
+        poster_tall: item.image_url,
+        poster_wide: item.image_url,
+        episodes: [],
+        total_episodes: item.episode_count || 0
+      }))
       
       this.recordSuccess('search')
-      this.setCached(cacheKey, results)
-      return results
+      this.setCached(cacheKey, transformedResults)
+      return transformedResults
     } catch (error) {
       this.recordFailure('search')
       throw new CrunchyrollIntegrationError(
@@ -144,12 +160,33 @@ class CrunchyrollIntegration {
     }
 
     try {
-      const series = await this.fetchFromCrunchyrollAPI(`/series/${seriesId}`)
-      const episodes = await this.fetchFromCrunchyrollAPI(`/series/${seriesId}/episodes`)
+      const sessionToken = await this.getSessionToken()
+      const episodesResponse = await this.fetchFromCrunchyrollBridge('/episodes', {
+        anime_id: seriesId,
+        session_token: sessionToken
+      })
+      
+      // Get series info from search (using first search result)
+      const searchResults = await this.searchAnime('id:' + seriesId)
+      const seriesInfo = searchResults[0] || {
+        id: seriesId,
+        title: 'Unknown Series',
+        description: '',
+        poster_tall: undefined,
+        poster_wide: undefined,
+        total_episodes: 0
+      }
       
       const result: CrunchyrollSeries = {
-        ...series,
-        episodes: episodes.items || []
+        ...seriesInfo,
+        episodes: episodesResponse.episodes.map((ep: any) => ({
+          id: ep.id,
+          title: ep.title,
+          episode_number: ep.number,
+          season_number: 1,
+          duration_ms: (ep.duration_seconds || 0) * 1000,
+          thumbnail: ep.thumbnail_url
+        }))
       }
       
       this.recordSuccess('series')
@@ -175,14 +212,19 @@ class CrunchyrollIntegration {
     }
 
     try {
-      const streamData = await this.fetchFromCrunchyrollAPI(`/episodes/${episodeId}/streams`)
+      const sessionToken = await this.getSessionToken()
+      const streamData = await this.fetchFromCrunchyrollBridge('/stream', {
+        episode_id: episodeId,
+        session_token: sessionToken,
+        quality: '1080p'
+      })
       
-      const sources: StreamingSource[] = streamData.streams?.map((stream: any) => ({
-        url: stream.url,
-        quality: stream.hardsub_locale ? `${stream.quality} (${stream.hardsub_locale})` : stream.quality,
-        type: stream.url.includes('.m3u8') ? 'hls' : 'mp4',
-        language: stream.hardsub_locale || 'sub'
-      })) || []
+      const sources: StreamingSource[] = [{
+        url: streamData.hls_url,
+        quality: streamData.quality,
+        type: 'hls',
+        language: 'sub'
+      }]
       
       this.recordSuccess('streams')
       this.setCached(cacheKey, sources, 180000) // 3 minute cache for streams
@@ -196,8 +238,8 @@ class CrunchyrollIntegration {
     }
   }
 
-  // Private method to handle API requests
-  private async fetchFromCrunchyrollAPI(endpoint: string): Promise<any> {
+  // Private method to handle Crunchyroll Bridge requests
+  private async fetchFromCrunchyrollBridge(endpoint: string, data?: any): Promise<any> {
     const url = `${this.baseUrl}${endpoint}`
     
     const headers: Record<string, string> = {
@@ -206,20 +248,51 @@ class CrunchyrollIntegration {
       'Content-Type': 'application/json'
     }
 
-    if (this.apiKey) {
-      headers['Authorization'] = `Bearer ${this.apiKey}`
-    }
-
     const response = await fetch(url, {
+      method: data ? 'POST' : 'GET',
       headers,
-      signal: AbortSignal.timeout(15000) // 15 second timeout
+      body: data ? JSON.stringify(data) : undefined,
+      signal: AbortSignal.timeout(30000) // 30 second timeout for bridge
     })
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`)
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(`Bridge request failed: ${response.status} - ${errorData.error || response.statusText}`)
     }
 
     return response.json()
+  }
+
+  // Get session token for Crunchyroll Bridge
+  private async getSessionToken(): Promise<string> {
+    const config = getEnvConfig()
+    const username = config.streaming.crunchyroll.email
+    const password = config.streaming.crunchyroll.password
+
+    if (!username || !password) {
+      throw new CrunchyrollIntegrationError('Crunchyroll credentials not configured', 401)
+    }
+
+    // Try to get cached session token
+    const sessionKey = 'crunchyroll_session'
+    const cachedSession = this.getCached<{ token: string; expires: number }>(sessionKey)
+    if (cachedSession && Date.now() < cachedSession.expires) {
+      return cachedSession.token
+    }
+
+    // Login to get new session token
+    const loginResponse = await this.fetchFromCrunchyrollBridge('/login', {
+      username,
+      password
+    })
+
+    // Cache the session token
+    this.setCached(sessionKey, {
+      token: loginResponse.session_token,
+      expires: Date.now() + (loginResponse.expires_in * 1000)
+    }, loginResponse.expires_in * 1000)
+
+    return loginResponse.session_token
   }
 
   // Map MAL ID to Crunchyroll series ID
@@ -245,8 +318,10 @@ class CrunchyrollIntegration {
   }
 
   private async fetchMalMapping(malId: number): Promise<string | null> {
-    // Implementation would query a mapping database or service
-    // This is a placeholder that would be replaced with real mapping logic
+    // For now, use search-based mapping since MAL->Crunchyroll mapping 
+    // would require a separate mapping service or database
+    // This could be enhanced with a proper mapping API later
+    console.warn(`MAL ID mapping not implemented for ID: ${malId}. Consider implementing a mapping service.`)
     return null
   }
 

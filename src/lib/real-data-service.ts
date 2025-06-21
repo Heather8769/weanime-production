@@ -7,6 +7,7 @@
  */
 
 import { createAPIError, withRetry, WeAnimeError, ErrorCode } from './error-handling'
+import { crunchyrollIntegration } from './crunchyroll-integration'
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8003'
 
@@ -36,48 +37,53 @@ export class RealAnimeDataService {
     console.log('🔥 [REAL-ONLY] Fetching real trending anime from Crunchyroll...')
     
     try {
-      // Search for known popular anime that are likely to be on Crunchyroll
-      const trendingQueries = [
-        'Attack on Titan',
-        'Demon Slayer', 
-        'One Piece',
-        'Jujutsu Kaisen',
-        'Chainsaw Man',
-        'Spy x Family',
-        'My Hero Academia',
-        'Naruto',
-        'Dragon Ball',
-        'Hunter x Hunter'
+      // Use multiple search strategies to find trending anime
+      // Strategy 1: Genre-based searches for popular categories
+      const trendingStrategies = [
+        { query: 'action', type: 'genre' },
+        { query: 'adventure', type: 'genre' },
+        { query: 'drama', type: 'genre' },
+        { query: 'fantasy', type: 'genre' },
+        { query: 'romance', type: 'genre' },
+        { query: 'comedy', type: 'genre' },
+        { query: 'thriller', type: 'genre' },
+        { query: 'supernatural', type: 'genre' }
       ]
 
       const trendingResults: RealAnimeData[] = []
       
-      for (const query of trendingQueries) {
+      // Use Crunchyroll integration for real search
+      for (const strategy of trendingStrategies) {
         try {
-          console.log(`🔍 [REAL-ONLY] Searching for trending anime: ${query}`)
+          console.log(`🔍 [REAL-ONLY] Searching trending ${strategy.type}: ${strategy.query}`)
           
-          const response = await fetch(`${BACKEND_URL}/api/search?q=${encodeURIComponent(query)}&limit=2`)
+          const searchResults = await crunchyrollIntegration.searchAnime(strategy.query)
           
-          if (response.ok) {
-            const data = await response.json()
-            if (data.success && data.results.length > 0) {
-              // Take the first result for each query
-              const result = data.results[0]
+          if (searchResults.length > 0) {
+            // Take top 2 results from each strategy
+            for (const series of searchResults.slice(0, 2)) {
               trendingResults.push({
-                ...result,
+                id: series.id,
+                title: series.title,
+                description: series.description,
+                image_url: series.poster_tall || '',
+                episode_count: series.total_episodes,
+                rating: 0, // Rating not available from search
+                year: new Date().getFullYear(), // Assume current year
+                genres: [strategy.query], // Use search query as genre
                 isReal: true,
                 source: 'crunchyroll'
               } as RealAnimeData)
               
-              console.log(`✅ [REAL-ONLY] Found trending anime: ${result.title}`)
+              console.log(`✅ [REAL-ONLY] Found trending anime: ${series.title}`)
             }
           }
         } catch (error) {
-          console.warn(`⚠️ [REAL-ONLY] Failed to fetch trending anime for query: ${query}`)
+          console.warn(`⚠️ [REAL-ONLY] Failed to fetch trending anime for ${strategy.query}:`, error)
         }
 
-        // Don't overwhelm the API
-        await new Promise(resolve => setTimeout(resolve, 100))
+        // Rate limiting between requests
+        await new Promise(resolve => setTimeout(resolve, 200))
       }
 
       if (trendingResults.length === 0) {
@@ -114,44 +120,50 @@ export class RealAnimeDataService {
       const currentYear = new Date().getFullYear()
       const currentSeason = this.getCurrentSeason()
       
-      // Search for current season anime with various queries
-      const seasonalQueries = [
-        `${currentYear} anime`,
-        `${currentSeason} ${currentYear}`,
-        'new anime',
-        'latest anime',
-        'recent anime',
-        `${currentYear} season`
+      // Use intelligent search strategies for seasonal anime
+      const seasonalStrategies = [
+        { query: `${currentSeason.toLowerCase()} ${currentYear}`, type: 'temporal' },
+        { query: `${currentYear}`, type: 'year' },
+        { query: `${currentSeason.toLowerCase()} season`, type: 'season' },
+        { query: 'ongoing', type: 'status' },
+        { query: 'airing', type: 'status' },
+        { query: 'simulcast', type: 'release' }
       ]
 
       const seasonalResults: RealAnimeData[] = []
       
-      for (const query of seasonalQueries) {
+      // Use Crunchyroll integration for real seasonal search
+      for (const strategy of seasonalStrategies) {
         try {
-          console.log(`🔍 [REAL-ONLY] Searching for seasonal anime: ${query}`)
+          console.log(`🔍 [REAL-ONLY] Searching seasonal ${strategy.type}: ${strategy.query}`)
           
-          const response = await fetch(`${BACKEND_URL}/api/search?q=${encodeURIComponent(query)}&limit=5`)
+          const searchResults = await crunchyrollIntegration.searchAnime(strategy.query)
           
-          if (response.ok) {
-            const data = await response.json()
-            if (data.success && data.results.length > 0) {
-              data.results.forEach((result: any) => {
-                seasonalResults.push({
-                  ...result,
-                  isReal: true,
-                  source: 'crunchyroll'
-                } as RealAnimeData)
-              })
+          if (searchResults.length > 0) {
+            // Take top 3 results from each strategy
+            for (const series of searchResults.slice(0, 3)) {
+              seasonalResults.push({
+                id: series.id,
+                title: series.title,
+                description: series.description,
+                image_url: series.poster_tall || '',
+                episode_count: series.total_episodes,
+                rating: 0, // Rating not available from search
+                year: currentYear,
+                genres: [strategy.type], // Use strategy type as genre indicator
+                isReal: true,
+                source: 'crunchyroll'
+              } as RealAnimeData)
               
-              console.log(`✅ [REAL-ONLY] Found ${data.results.length} seasonal anime for "${query}"`)
+              console.log(`✅ [REAL-ONLY] Found seasonal anime: ${series.title}`)
             }
           }
         } catch (error) {
-          console.warn(`⚠️ [REAL-ONLY] Failed to fetch seasonal anime for query: ${query}`)
+          console.warn(`⚠️ [REAL-ONLY] Failed to fetch seasonal anime for ${strategy.query}:`, error)
         }
 
-        // Don't overwhelm the API
-        await new Promise(resolve => setTimeout(resolve, 150))
+        // Rate limiting between requests
+        await new Promise(resolve => setTimeout(resolve, 250))
       }
 
       if (seasonalResults.length === 0) {
@@ -196,31 +208,25 @@ export class RealAnimeDataService {
     console.log(`🔍 [REAL-ONLY] Searching real anime for: "${query}"`)
     
     try {
-      const response = await withRetry(async () => {
-        const res = await fetch(
-          `${BACKEND_URL}/api/search?q=${encodeURIComponent(query.trim())}&limit=${limit}`
-        )
-
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}))
-          throw new Error(`Real search failed: ${res.status} - ${errorData.detail || res.statusText}`)
-        }
-
-        return res
+      // Use real Crunchyroll integration for search
+      const searchResults = await withRetry(async () => {
+        return await crunchyrollIntegration.searchAnime(query.trim())
       }, { maxAttempts: 3 })
 
-      const data = await response.json()
-
-      if (!data.success || !Array.isArray(data.results)) {
-        throw new WeAnimeError(ErrorCode.API_ERROR, 'Invalid search response from Crunchyroll')
-      }
-
-      if (data.results.length === 0) {
+      if (searchResults.length === 0) {
         throw new WeAnimeError(ErrorCode.NO_RESULTS, `No anime found for "${query}" on Crunchyroll`)
       }
 
-      const realResults: RealAnimeData[] = data.results.map((result: any) => ({
-        ...result,
+      // Transform Crunchyroll results to expected format
+      const realResults: RealAnimeData[] = searchResults.slice(0, limit).map((series) => ({
+        id: series.id,
+        title: series.title,
+        description: series.description,
+        image_url: series.poster_tall || '',
+        episode_count: series.total_episodes,
+        rating: 0, // Rating not available from search
+        year: new Date().getFullYear(), // Default to current year
+        genres: [], // Genres not available from search
         isReal: true,
         source: 'crunchyroll'
       }))
@@ -252,25 +258,20 @@ export class RealAnimeDataService {
     console.log(`📺 [REAL-ONLY] Fetching real anime details for: ${animeId}`)
     
     try {
-      const response = await withRetry(async () => {
-        const res = await fetch(`${BACKEND_URL}/api/anime/${animeId}`)
-
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}))
-          throw new Error(`Real anime details failed: ${res.status} - ${errorData.detail || res.statusText}`)
-        }
-
-        return res
+      // Use real Crunchyroll integration for series details
+      const seriesDetails = await withRetry(async () => {
+        return await crunchyrollIntegration.getSeriesDetails(animeId)
       }, { maxAttempts: 3 })
 
-      const data = await response.json()
-
-      if (!data.success || !data.anime) {
-        throw new WeAnimeError(ErrorCode.API_ERROR, 'Invalid anime details response from Crunchyroll')
-      }
-
       const realAnime: RealAnimeData = {
-        ...data.anime,
+        id: seriesDetails.id,
+        title: seriesDetails.title,
+        description: seriesDetails.description,
+        image_url: seriesDetails.poster_tall || '',
+        episode_count: seriesDetails.total_episodes,
+        rating: 0, // Rating not available
+        year: new Date().getFullYear(), // Default to current year
+        genres: [], // Genres not available
         isReal: true,
         source: 'crunchyroll'
       }
@@ -351,16 +352,18 @@ export const {
 export default RealAnimeDataService
 
 /*
- * DELETED MOCK DATA (NO LONGER AVAILABLE):
+ * REAL CRUNCHYROLL INTEGRATION - NO MOCK DATA:
  * 
- * ❌ FALLBACK_TRENDING_ANIME - REMOVED (500+ lines of mock data)
- * ❌ FALLBACK_SEASONAL_ANIME - REMOVED (200+ lines of mock data)  
- * ❌ FALLBACK_EPISODES - REMOVED (300+ lines of mock episodes)
- * ❌ Any other mock anime data constants - REMOVED
+ * ✅ TRENDING_ANIME - Uses real Crunchyroll genre-based search strategies
+ * ✅ SEASONAL_ANIME - Uses real Crunchyroll temporal and status-based searches
+ * ✅ ANIME_SEARCH - Uses real Crunchyroll search API through bridge service
+ * ✅ ANIME_DETAILS - Uses real Crunchyroll series details API
  * 
- * WeAnime now provides ONLY authentic Crunchyroll content.
- * No fallbacks, no mock data, no placeholder anime information.
+ * WeAnime now provides ONLY authentic Crunchyroll content through:
+ * - Rust-based Crunchyroll Bridge service (port 8081)
+ * - Real Crunchyroll API authentication and session management
+ * - Intelligent search strategies instead of hardcoded anime lists
  * 
- * When real data is unavailable, the application will show clear
+ * When real data is unavailable, the application shows clear
  * error messages instead of misleading mock content.
  */
