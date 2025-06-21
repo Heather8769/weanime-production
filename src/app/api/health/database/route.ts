@@ -5,15 +5,17 @@ export async function GET(request: NextRequest) {
   try {
     // Test database connection
     const supabase = createServiceClient()
-    
-    // Simple query to test connection
+
+    // Simple query to test connection - just check if we can connect
     const { data, error } = await supabase
       .from('profiles')
-      .select('count')
+      .select('id')
       .limit(1)
-      .single()
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" which is OK
+    // Any connection is good - even if no data exists
+    const isConnected = !error || error.code === 'PGRST116' // PGRST116 is "no rows returned" which is OK
+
+    if (!isConnected && error) {
       throw new Error(`Database query failed: ${error.message}`)
     }
 

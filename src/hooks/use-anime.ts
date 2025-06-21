@@ -58,7 +58,28 @@ export function useAnimeDetails(id: number) {
 export function useTrendingAnime() {
   return useInfiniteQuery({
     queryKey: ['anime', 'trending'],
-    queryFn: ({ pageParam = 1 }) => getTrendingAnime(pageParam, 20),
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await fetch('/api/trending')
+      if (!response.ok) {
+        throw new Error('Failed to fetch trending anime')
+      }
+      const data = await response.json()
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch trending anime')
+      }
+      return {
+        Page: {
+          pageInfo: {
+            total: data.total || 0,
+            currentPage: pageParam,
+            lastPage: Math.ceil((data.total || 0) / 20),
+            hasNextPage: pageParam < Math.ceil((data.total || 0) / 20),
+            perPage: 20
+          },
+          media: data.data || []
+        }
+      }
+    },
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const { pageInfo } = lastPage.Page
@@ -81,8 +102,28 @@ export function useSeasonalAnime(season?: string, year?: number) {
 
   return useInfiniteQuery({
     queryKey: ['anime', 'seasonal', currentSeason, currentYear],
-    queryFn: ({ pageParam = 1 }) =>
-      getSeasonalAnime(currentSeason, currentYear, pageParam, 20),
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await fetch('/api/seasonal')
+      if (!response.ok) {
+        throw new Error('Failed to fetch seasonal anime')
+      }
+      const data = await response.json()
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch seasonal anime')
+      }
+      return {
+        Page: {
+          pageInfo: {
+            total: data.total || 0,
+            currentPage: pageParam,
+            lastPage: Math.ceil((data.total || 0) / 20),
+            hasNextPage: pageParam < Math.ceil((data.total || 0) / 20),
+            perPage: 20
+          },
+          media: data.data || []
+        }
+      }
+    },
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const { pageInfo } = lastPage.Page
