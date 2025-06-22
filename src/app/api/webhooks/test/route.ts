@@ -2,6 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { webhookAlerts, sendErrorAlert } from '@/lib/webhook-alerts'
 
+
+// Required for static export
+export const dynamic = 'force-static'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()

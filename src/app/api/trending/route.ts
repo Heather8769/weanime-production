@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { cachedFetch, cacheKeys } from '@/lib/api-cache'
 
+
+// Required for static export
+export const dynamic = 'force-static'
 const ANILIST_GRAPHQL_URL = 'https://graphql.anilist.co'
 
 const TRENDING_QUERY = `

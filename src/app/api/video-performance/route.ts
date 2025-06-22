@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+
+// Required for static export
+export const dynamic = 'force-static'
 interface VideoPerformanceMetrics {
   sessionId: string
   animeId: number

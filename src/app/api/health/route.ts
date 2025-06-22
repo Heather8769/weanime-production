@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getStreamingHealth } from '@/lib/improved-streaming-service'
 
+
+// Required for static export
+export const dynamic = 'force-static'
 export async function GET() {
   try {
     const health = await getStreamingHealth()

@@ -5,6 +5,9 @@ import { migrationController } from '@/lib/migration-controller'
 // Real Anime API - No Mock Data!
 // Provides comprehensive anime information from real sources only
 
+
+// Required for static export
+export const dynamic = 'force-static'
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

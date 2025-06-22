@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // Real anime streaming API endpoints
+
+// Required for static export
+export const dynamic = 'force-static'
 const CONSUMET_API = 'https://api.consumet.org'
 const ANIWATCH_API = 'https://aniwatch-api.vercel.app'
 

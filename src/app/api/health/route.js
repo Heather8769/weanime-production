@@ -1,5 +1,8 @@
 import { performanceUtils } from '../../../utils/performance';
 
+
+// Required for static export
+export const dynamic = 'force-static'
 export async function GET(request) {
   performanceUtils.logMemory('Health Check');
   

@@ -1,5 +1,8 @@
 import { getBackendStatus } from '@/lib/backend-proxy'
 
+
+// Required for static export
+export const dynamic = 'force-static'
 export async function GET() {
   try {
     const status = await getBackendStatus()

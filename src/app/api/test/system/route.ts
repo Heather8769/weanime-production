@@ -1,6 +1,9 @@
 // System Test API Endpoint for Localhost Testing
 import { NextRequest, NextResponse } from 'next/server'
 
+
+// Required for static export
+export const dynamic = 'force-static'
 export async function GET(request: NextRequest) {
   try {
     const testResults = {

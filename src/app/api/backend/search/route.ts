@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server'
 import { backendProxy } from '@/lib/backend-proxy'
 
+
+// Required for static export
+export const dynamic = 'force-static'
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams

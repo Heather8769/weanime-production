@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { animeDatabaseUpdater, triggerDatabaseUpdate, getDatabaseUpdateStatus } from '@/lib/anime-database-updater'
 import { supabase } from '@/lib/supabase'
 
+
+// Required for static export
+export const dynamic = 'force-static'
 export async function POST(request: NextRequest) {
   try {
     const { action } = await request.json()

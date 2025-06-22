@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+
+// Required for static export
+export const dynamic = 'force-static'
 const ANILIST_GRAPHQL_URL = 'https://graphql.anilist.co'
 
 export async function POST(request: NextRequest) {

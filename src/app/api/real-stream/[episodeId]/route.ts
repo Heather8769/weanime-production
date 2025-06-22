@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Required for static export
+export const dynamic = 'force-static'
+
 const REAL_CRUNCHYROLL_BACKEND_URL = process.env.REAL_CRUNCHYROLL_BACKEND_URL || 'http://localhost:8003'
 
 export async function GET(

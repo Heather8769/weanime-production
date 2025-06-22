@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { 
+
+// Required for static export
+export const dynamic = 'force-static'
   watchlistAddSchema, 
   watchlistUpdateSchema, 
   watchlistRemoveSchema, 

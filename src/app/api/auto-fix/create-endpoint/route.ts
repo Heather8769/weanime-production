@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 
+
+// Required for static export
+export const dynamic = 'force-static'
 export async function POST(request: NextRequest) {
   try {
     const { endpoint, type } = await request.json()

@@ -3,6 +3,9 @@ import { writeFile, readFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
 
+
+// Required for static export
+export const dynamic = 'force-static'
 interface ErrorEntry {
   timestamp: string
   level: 'ERROR' | 'WARN' | 'INFO'
