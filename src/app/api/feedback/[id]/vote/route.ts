@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 
-// Required for static export
-export const dynamic = 'force-static'
 interface VoteRequest {
   vote: 'up' | 'down'
   userId?: string

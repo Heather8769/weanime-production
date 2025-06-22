@@ -1,9 +1,9 @@
-# WeAnime Production Build Configuration - Updated 2025-06-21
+# WeAnime Production Build Configuration - Fixed for Serverless
 # Optimized for Next.js 15 + Netlify deployment
 
 [build]
   command = "npm ci && npm run build"
-  publish = "out"
+  publish = ".next"
 
 [build.environment]
   NEXT_PUBLIC_SUPABASE_URL = "https://zwvilprhyvzwcrhkyhjy.supabase.co"
@@ -26,8 +26,32 @@
   NPM_VERSION = "10"
   NODE_ENV = "production"
 
-# Static site redirects for SPA routing
+# Netlify Functions configuration
+[functions]
+  directory = ".netlify/functions"
+  node_bundler = "esbuild"
+
+# Essential plugin for Next.js serverless deployment
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Function configuration
+[[functions.settings]]
+  name = "___netlify-server-handler"
+  memory = 1024
+  timeout = 30
+
+# Headers for API routes
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+
+# Redirects for custom domain
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+  from = "https://weanime-production.netlify.app/*"
+  to = "https://weanime.live/:splat"
+  status = 301
+  force = true

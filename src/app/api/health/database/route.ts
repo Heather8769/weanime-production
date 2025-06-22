@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 
 
-// Required for static export
-export const dynamic = 'force-static'
 export async function GET(request: NextRequest) {
   try {
     // Test database connection

@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 
 // Working anime APIs
 
-// Required for static export
-export const dynamic = 'force-static'
 const JIKAN_API = 'https://api.jikan.moe/v4'
 const KITSU_API = 'https://kitsu.io/api/edge'
 

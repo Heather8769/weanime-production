@@ -1,0 +1,44 @@
+# Revolutionary Micro-Services Architecture for WeAnime
+
+# Main UI Shell (Static)
+[build]
+  command = "npm run build:shell"
+  publish = "out/shell"
+
+# API Gateway (Edge Function)
+[[edge_functions]]
+  path = "/api/*"
+  function = "api-gateway"
+
+# Streaming Service (Separate Deployment)
+[[redirects]]
+  from = "/api/streaming/*"
+  to = "https://weanime-streaming.netlify.app/:splat"
+  status = 200
+  force = true
+
+# Auth Service (Separate Deployment)  
+[[redirects]]
+  from = "/api/auth/*"
+  to = "https://weanime-auth.netlify.app/:splat"
+  status = 200
+  force = true
+
+# Content Service (Separate Deployment)
+[[redirects]]
+  from = "/api/content/*"
+  to = "https://weanime-content.netlify.app/:splat"
+  status = 200
+  force = true
+
+# Static Assets CDN
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Service Worker for offline support
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Service-Worker-Allowed = "/"

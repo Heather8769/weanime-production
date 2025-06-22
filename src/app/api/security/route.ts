@@ -3,8 +3,6 @@ import { securityEnhancer, withSecurity, withAuth } from '@/lib/security-enhance
 import { supabase } from '@/lib/supabase'
 
 
-// Required for static export
-export const dynamic = 'force-static'
 export async function GET(request: NextRequest) {
   return withSecurity(withAuth(async (req: NextRequest) => {
     try {

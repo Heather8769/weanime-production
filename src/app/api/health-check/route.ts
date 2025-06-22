@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 
-// Required for static export
-export const dynamic = 'force-static'
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy'
   timestamp: string

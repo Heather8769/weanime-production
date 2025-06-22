@@ -1,90 +1,48 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Remove static export - enable dynamic functionality
-  // output: 'export', // REMOVED - This was breaking everything
-
-  // Memory and performance optimizations
+  // Revolutionary: Use edge runtime for everything
   experimental: {
+    runtime: 'edge', // Force edge runtime globally
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
   },
 
-  // Enable TypeScript checking for production quality
-  typescript: {
-    ignoreBuildErrors: false,
-  },
-  
-  // Enable ESLint during build for production quality
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
+  // Edge-optimized configuration
+  swcMinify: true,
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
 
-  // Webpack configuration for better module resolution AND memory optimization
+  // Webpack configuration for edge compatibility
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Ensure proper module resolution for @ alias
+    // Edge-compatible module resolution
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': require('path').resolve(__dirname, 'src'),
     }
 
-    if (isServer && !dev) {
-      // Critical: Reduce server bundle size
-      config.optimization.splitChunks = false;
-      config.optimization.minimize = true;
+    // Remove Node.js specific modules for edge
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+      crypto: false,
     }
-
-    // Memory optimization
-    config.optimization.usedExports = true;
-    config.optimization.sideEffects = false;
 
     return config
   },
 
-  // Turbopack configuration
-  turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
-  },
-
-  // Image optimization
+  // Image optimization for edge
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 's4.anilist.co',
-        port: '',
-        pathname: '/file/anilistcdn/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'img1.ak.crunchyroll.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.myanimelist.net',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'commondatastorage.googleapis.com',
-        port: '',
-        pathname: '/gtv-videos-bucket/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'i.ytimg.com',
-        port: '',
-        pathname: '/**',
+        hostname: '**',
       },
     ],
   },
 
+  // Headers remain the same
   async headers() {
     return [
       {
@@ -118,18 +76,6 @@ const nextConfig = {
       },
     ]
   },
-
-  // Compression
-  compress: true,
-
-  // Power by header
-  poweredByHeader: false,
-
-  // React strict mode
-  reactStrictMode: true,
-
-  // Trailing slash
-  trailingSlash: true,
 }
 
 module.exports = nextConfig

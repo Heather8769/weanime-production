@@ -3,8 +3,6 @@ import { supabase } from '@/lib/supabase'
 import { contentModerator } from '@/lib/content-moderation'
 
 
-// Required for static export
-export const dynamic = 'force-static'
 interface FeedbackItem {
   id?: string
   type: 'bug' | 'feature' | 'general' | 'performance'

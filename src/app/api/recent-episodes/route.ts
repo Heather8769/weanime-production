@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 
-// Required for static export
-export const dynamic = 'force-static'
-
 // Implementation based on weanime_fix_guide_with_code.md
 
 /**

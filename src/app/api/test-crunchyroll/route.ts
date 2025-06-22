@@ -3,8 +3,6 @@ import { getEnvConfig } from '@/lib/env-validation'
 
 // Simple Crunchyroll credentials test endpoint
 
-// Required for static export
-export const dynamic = 'force-static'
 export async function GET(request: NextRequest) {
   try {
     const config = getEnvConfig()

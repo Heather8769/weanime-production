@@ -8,8 +8,6 @@ import { crunchyrollBridgeClient } from '@/lib/crunchyroll-bridge-client'
 // Provides comprehensive status of all integrated services
 
 
-// Required for static export
-export const dynamic = 'force-static'
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy'
   timestamp: string

@@ -4,8 +4,6 @@ import { contentModerator, ModerationResult, ContentItem, ModerationAction } fro
 
 // In-memory storage for moderation actions (use database in production)
 
-// Required for static export
-export const dynamic = 'force-static'
 const moderationActions: ModerationAction[] = []
 const pendingReviews: Map<string, ContentItem & { moderationResult: ModerationResult }> = new Map()
 

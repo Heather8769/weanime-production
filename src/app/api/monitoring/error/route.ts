@@ -4,8 +4,6 @@ import { sendErrorAlert } from '@/lib/webhook-alerts'
 import { withRateLimit, rateLimiters } from '@/lib/rate-limiter'
 
 
-// Required for static export
-export const dynamic = 'force-static'
 export const POST = withRateLimit(async function(request: NextRequest) {
   try {
     const errorReport = await request.json()

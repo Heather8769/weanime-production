@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 
-// Required for static export
-export const dynamic = 'force-static'
 const JIKAN_BASE_URL = 'https://api.jikan.moe/v4'
 
 export async function GET(request: NextRequest) {

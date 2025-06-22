@@ -4,8 +4,6 @@ import { fetchLegalAnimeStreams } from '@/lib/real-anime-apis'
 import { WeAnimeError, ErrorCode } from '@/lib/error-handling'
 
 
-// Required for static export
-export const dynamic = 'force-static'
 /**
  * Real Streaming API - NO MOCK DATA
  * 
