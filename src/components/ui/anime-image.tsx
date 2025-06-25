@@ -88,7 +88,7 @@ export function AnimeImage({
   // Handle image load error
   const handleError = useCallback(() => {
     // Only log errors for non-fallback images to reduce console spam
-    if (src && !src.includes('placeholder') && !src.includes('fallback') && !src.includes('data:image')) {
+    if (process.env.NODE_ENV === 'development' && src && !src.includes('placeholder') && !src.includes('fallback') && !src.includes('data:image')) {
       console.warn(`AnimeImage: Failed to load image: ${currentSrc || src}`)
     }
 

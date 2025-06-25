@@ -7,29 +7,34 @@ import {
   validateInput
 } from '@/lib/validation-schemas'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+// Initialize Supabase client with runtime validation
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// Production requires valid Supabase configuration - NO DEMO STORAGE
-if (!supabaseUrl || !supabaseServiceKey || 
-    supabaseUrl === 'https://placeholder.supabase.co' ||
-    supabaseServiceKey === 'your_service_role_key_here') {
-  throw new Error('WeAnime requires valid Supabase configuration for production. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.')
+  // Production requires valid Supabase configuration - NO DEMO STORAGE
+  if (!supabaseUrl || !supabaseServiceKey ||
+      supabaseUrl === 'https://placeholder.supabase.co' ||
+      supabaseServiceKey === 'your_service_role_key_here') {
+    throw new Error('WeAnime requires valid Supabase configuration for production. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.')
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey)
 }
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 // Get user's watchlist
 export async function GET(request: NextRequest) {
   try {
+    const supabase = getSupabaseClient()
+
     // Get authenticated user ID from middleware headers
     const userId = request.headers.get('x-user-id')
-    
+
     if (!userId) {
       return NextResponse.json(
-        { 
+        {
           error: 'Authentication required',
-          success: false 
+          success: false
         },
         { status: 401 }
       )
@@ -92,6 +97,8 @@ export async function GET(request: NextRequest) {
 // Add anime to watchlist
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabaseClient()
+
     // Get authenticated user ID from middleware headers
     const userId = request.headers.get('x-user-id')
     
@@ -193,6 +200,8 @@ export async function POST(request: NextRequest) {
 // Update watchlist item
 export async function PUT(request: NextRequest) {
   try {
+    const supabase = getSupabaseClient()
+
     // Get authenticated user ID from middleware headers
     const userId = request.headers.get('x-user-id')
     
@@ -278,6 +287,8 @@ export async function PUT(request: NextRequest) {
 // Remove from watchlist
 export async function DELETE(request: NextRequest) {
   try {
+    const supabase = getSupabaseClient()
+
     // Get authenticated user ID from middleware headers
     const userId = request.headers.get('x-user-id')
     

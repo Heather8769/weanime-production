@@ -36,8 +36,7 @@
   package = "@netlify/plugin-nextjs"
 
 # Function configuration
-[[functions.settings]]
-  name = "___netlify-server-handler"
+[functions.settings]
   memory = 1024
   timeout = 30
 

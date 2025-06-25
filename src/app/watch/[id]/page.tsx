@@ -11,6 +11,7 @@ import { getAnimeEpisodes, getNextEpisodeToWatch, getEpisodeWithVideoSources } f
 import { VideoPlayer } from '@/components/video-player'
 import { EpisodeList } from '@/components/episode-list'
 import { Button } from '@/components/ui/button'
+import { VideoErrorBoundary } from '@/components/error-boundary'
 
 interface WatchPageProps {
   params: Promise<{ id: string }>
@@ -147,7 +148,9 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
         let animeEpisodes: Episode[] = []
 
         // Use the episode service to get episodes (it will handle backend integration)
-        console.log('Watch page: Getting episodes from episode service...')
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Watch page: Getting episodes from episode service...')
+        }
         animeEpisodes = await getAnimeEpisodes(resolvedAnimeId, anime?.episodes || undefined)
         setEpisodes(animeEpisodes)
         setStoreEpisodes(animeEpisodes)
@@ -172,14 +175,18 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
         if (episodeToPlay) {
           // Get enhanced video sources for the episode to play
           try {
-            console.log('Getting enhanced episode for:', resolvedAnimeId, episodeToPlay.number)
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Getting enhanced episode for:', resolvedAnimeId, episodeToPlay.number)
+            }
             const enhancedEpisode = await getEpisodeWithVideoSources(resolvedAnimeId, episodeToPlay.number)
-            console.log('Enhanced episode result:', enhancedEpisode ? {
-              id: enhancedEpisode.id,
-              title: enhancedEpisode.title,
-              sourcesCount: enhancedEpisode.sources?.length || 0,
-              sources: enhancedEpisode.sources
-            } : 'null')
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Enhanced episode result:', enhancedEpisode ? {
+                id: enhancedEpisode.id,
+                title: enhancedEpisode.title,
+                sourcesCount: enhancedEpisode.sources?.length || 0,
+                sources: enhancedEpisode.sources
+              } : 'null')
+            }
             const finalEpisode = enhancedEpisode || episodeToPlay
 
             setCurrentEpisode(finalEpisode)
@@ -190,7 +197,9 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
               router.replace(`/watch/${resolvedAnimeId}?episode=${finalEpisode.id}`, { scroll: false })
             }
           } catch (error) {
-            console.error('Error loading enhanced episode:', error)
+            if (process.env.NODE_ENV === 'development') {
+              console.error('Error loading enhanced episode:', error)
+            }
             // Fallback to basic episode
             setCurrentEpisode(episodeToPlay)
             setStoreCurrentEpisode(episodeToPlay)
@@ -314,11 +323,13 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
     <div className="min-h-screen bg-black">
       {/* Video Player */}
       <div className="relative">
-        <VideoPlayer
-          episode={currentEpisode}
-          animeId={resolvedAnimeId || 0}
-          className="w-full"
-        />
+        <VideoErrorBoundary>
+          <VideoPlayer
+            episode={currentEpisode}
+            animeId={resolvedAnimeId || 0}
+            className="w-full"
+          />
+        </VideoErrorBoundary>
         
         {/* Back Button */}
         <motion.div

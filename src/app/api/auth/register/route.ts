@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-
+import { withRateLimit, rateLimiters } from '@/lib/rate-limiter'
+import {
+  hashPassword,
+  validatePasswordComplexity,
+  generateSessionToken,
+  logSecurityEvent,
+  SecurityEventType,
+  SECURITY_MESSAGES,
+  getClientIP,
+  generateSecureToken
+} from '@/lib/auth-security'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -20,32 +30,38 @@ if (isSupabaseConfigured) {
   }
 }
 
-// Fallback authentication system when Supabase is unavailable
+// Secure fallback authentication system when Supabase is unavailable
 const FALLBACK_USERS: Record<string, {
   id: string,
   email: string,
   username: string,
-  password: string,
+  password: string, // Now stores bcrypt hash
   created_at: string
 }> = {}
 
 function generateUserId(): string {
-  return 'user_' + Math.random().toString(36).substr(2, 9)
+  return 'user_' + generateSecureToken().substring(0, 16)
 }
 
-function hashPassword(password: string): string {
-  return Buffer.from(password).toString('base64')
-}
+// Secure registration handler with comprehensive validation and security logging
+async function registerHandler(request: NextRequest) {
+  const clientIP = getClientIP(request)
+  let email = ''
+  let username = ''
 
-function verifyPassword(password: string, hash: string): boolean {
-  return Buffer.from(password).toString('base64') === hash
-}
-
-export async function POST(request: NextRequest) {
   try {
-    const { email, password, username } = await request.json()
+    const { email: userEmail, password, username: userUsername } = await request.json()
+    email = userEmail
+    username = userUsername
 
+    // Input validation
     if (!email || !password || !username) {
+      logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+        email,
+        severity: 'MEDIUM',
+        additionalData: { reason: 'Missing required fields', stage: 'registration' }
+      })
+
       return NextResponse.json(
         {
           error: 'Missing required fields: email, password, username',
@@ -58,6 +74,12 @@ export async function POST(request: NextRequest) {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
+      logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+        email,
+        severity: 'MEDIUM',
+        additionalData: { reason: 'Invalid email format', stage: 'registration' }
+      })
+
       return NextResponse.json(
         {
           error: 'Invalid email format',
@@ -67,11 +89,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate password strength
-    if (password.length < 8) {
+    // Comprehensive password validation
+    const passwordValidation = validatePasswordComplexity(password)
+    if (!passwordValidation.isValid) {
+      logSecurityEvent(SecurityEventType.WEAK_PASSWORD_REJECTED, request, {
+        email,
+        severity: 'HIGH',
+        additionalData: {
+          errors: passwordValidation.errors,
+          strength: passwordValidation.strength,
+          stage: 'registration'
+        }
+      })
+
       return NextResponse.json(
         {
-          error: 'Password must be at least 8 characters long',
+          error: SECURITY_MESSAGES.WEAK_PASSWORD,
+          details: passwordValidation.errors,
           success: false
         },
         { status: 400 }
@@ -80,6 +114,12 @@ export async function POST(request: NextRequest) {
 
     // Validate username
     if (username.length < 3 || username.length > 20) {
+      logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+        email,
+        severity: 'MEDIUM',
+        additionalData: { reason: 'Invalid username length', stage: 'registration' }
+      })
+
       return NextResponse.json(
         {
           error: 'Username must be between 3 and 20 characters',
@@ -92,7 +132,11 @@ export async function POST(request: NextRequest) {
     // Try Supabase first if configured
     if (supabase && isSupabaseConfigured) {
       try {
-        console.log(`Attempting to register user: ${email} (using Supabase)`)
+        logSecurityEvent(SecurityEventType.AUTHENTICATION_SUCCESS, request, {
+          email,
+          severity: 'LOW',
+          additionalData: { provider: 'supabase', stage: 'registration_attempting' }
+        })
 
         // Check if username already exists
         const { data: existingUser } = await supabase
@@ -102,6 +146,12 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (existingUser) {
+          logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+            email,
+            severity: 'MEDIUM',
+            additionalData: { reason: 'Username taken', stage: 'registration', provider: 'supabase' }
+          })
+
           return NextResponse.json(
             {
               error: 'Username already taken',
@@ -123,7 +173,16 @@ export async function POST(request: NextRequest) {
         })
 
         if (authError) {
-          console.error('Supabase auth error:', authError)
+          logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+            email,
+            severity: 'HIGH',
+            additionalData: {
+              provider: 'supabase',
+              error: authError.message,
+              stage: 'registration'
+            }
+          })
+
           return NextResponse.json(
             {
               error: authError.message,
@@ -134,9 +193,19 @@ export async function POST(request: NextRequest) {
         }
 
         if (!authData.user) {
+          logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+            email,
+            severity: 'CRITICAL',
+            additionalData: {
+              provider: 'supabase',
+              reason: 'No user data returned',
+              stage: 'registration'
+            }
+          })
+
           return NextResponse.json(
             {
-              error: 'Failed to create user account',
+              error: SECURITY_MESSAGES.REGISTRATION_FAILED,
               success: false
             },
             { status: 500 }
@@ -162,11 +231,24 @@ export async function POST(request: NextRequest) {
           })
 
         if (profileError) {
-          console.error('Profile creation error:', profileError)
-          // Don't fail registration if profile creation fails
+          logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+            email,
+            userId: authData.user.id,
+            severity: 'MEDIUM',
+            additionalData: {
+              provider: 'supabase',
+              error: profileError.message,
+              stage: 'profile_creation'
+            }
+          })
         }
 
-        console.log(`Successfully registered user: ${email}`)
+        logSecurityEvent(SecurityEventType.AUTHENTICATION_SUCCESS, request, {
+          email,
+          userId: authData.user.id,
+          severity: 'LOW',
+          additionalData: { provider: 'supabase', stage: 'registration_completed' }
+        })
 
         return NextResponse.json({
           success: true,
@@ -182,12 +264,25 @@ export async function POST(request: NextRequest) {
         })
 
       } catch (supabaseError) {
-        console.error('Supabase registration failed, falling back to fallback mode:', supabaseError)
+        logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+          email,
+          severity: 'HIGH',
+          additionalData: {
+            provider: 'supabase',
+            error: supabaseError instanceof Error ? supabaseError.message : 'Unknown error',
+            stage: 'registration',
+            fallbackMode: true
+          }
+        })
       }
     }
 
-    // Fallback to fallback mode
-    console.log(`Attempting to register user: ${email} (using fallback auth)`)
+    // Secure fallback mode
+    logSecurityEvent(SecurityEventType.AUTHENTICATION_SUCCESS, request, {
+      email,
+      severity: 'LOW',
+      additionalData: { provider: 'fallback', stage: 'registration_attempting' }
+    })
 
     // Check if user already exists
     const existingUser = Object.values(FALLBACK_USERS).find(
@@ -195,6 +290,16 @@ export async function POST(request: NextRequest) {
     )
 
     if (existingUser) {
+      logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+        email,
+        severity: 'MEDIUM',
+        additionalData: {
+          provider: 'fallback',
+          reason: existingUser.email === email ? 'Email taken' : 'Username taken',
+          stage: 'registration'
+        }
+      })
+
       return NextResponse.json(
         {
           error: existingUser.email === email ? 'Email already registered' : 'Username already taken',
@@ -204,9 +309,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create user account (fallback mode)
+    // Create user account with secure password hashing
     const userId = generateUserId()
-    const hashedPassword = hashPassword(password)
+    const hashedPassword = await hashPassword(password)
+
+    logSecurityEvent(SecurityEventType.PASSWORD_HASHED, request, {
+      email,
+      userId,
+      severity: 'LOW',
+      additionalData: {
+        provider: 'fallback',
+        passwordStrength: passwordValidation.strength,
+        stage: 'registration'
+      }
+    })
 
     FALLBACK_USERS[userId] = {
       id: userId,
@@ -216,32 +332,46 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString()
     }
 
-    console.log(`Successfully registered fallback user: ${email}`)
+    logSecurityEvent(SecurityEventType.AUTHENTICATION_SUCCESS, request, {
+      email,
+      userId,
+      severity: 'LOW',
+      additionalData: { provider: 'fallback', stage: 'registration_completed' }
+    })
 
     return NextResponse.json({
       success: true,
-      message: 'User registered successfully (fallback mode)',
+      message: 'User registered successfully (secure fallback mode)',
       user: {
         id: userId,
         email: email,
         username: username,
         emailConfirmed: true // Fallback mode - auto-confirm
       },
-      mode: 'demo',
-      note: 'This is a demo registration. Data will not persist between server restarts.',
+      mode: 'secure_demo',
+      note: 'Secure demo registration with bcrypt password hashing and comprehensive security logging.',
       timestamp: new Date().toISOString()
     })
 
   } catch (error) {
-    console.error('Registration error:', error)
+    logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+      email,
+      severity: 'CRITICAL',
+      additionalData: {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stage: 'registration_exception'
+      }
+    })
 
     return NextResponse.json(
       {
-        error: 'Failed to register user',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        error: SECURITY_MESSAGES.REGISTRATION_FAILED,
         success: false
       },
       { status: 500 }
     )
   }
 }
+
+// Export POST handler with rate limiting (stricter for registration)
+export const POST = withRateLimit(registerHandler, rateLimiters.auth)

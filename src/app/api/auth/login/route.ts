@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-
+import { withRateLimit, rateLimiters } from '@/lib/rate-limiter'
+import {
+  verifyPassword,
+  generateSessionToken,
+  logSecurityEvent,
+  SecurityEventType,
+  SECURITY_MESSAGES,
+  detectSuspiciousActivity,
+  getClientIP
+} from '@/lib/auth-security'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -20,28 +29,32 @@ if (isSupabaseConfigured) {
   }
 }
 
-// Fallback authentication when Supabase unavailable
+// Fallback authentication when Supabase unavailable (using secure hashing now)
 const FALLBACK_USERS: Record<string, {
   id: string,
   email: string,
   username: string,
-  password: string,
+  password: string, // Now stores bcrypt hash instead of base64
   created_at: string
 }> = {}
 
-function verifyPassword(password: string, hash: string): boolean {
-  return Buffer.from(password).toString('base64') === hash
-}
+// Secure login handler with rate limiting and comprehensive security logging
+async function loginHandler(request: NextRequest) {
+  const clientIP = getClientIP(request)
+  let email = ''
 
-function generateToken(): string {
-  return 'fallback_token_' + Math.random().toString(36).substr(2, 16)
-}
-
-export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { email: userEmail, password } = await request.json()
+    email = userEmail
 
+    // Input validation
     if (!email || !password) {
+      logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+        email,
+        severity: 'MEDIUM',
+        additionalData: { reason: 'Missing credentials' }
+      })
+
       return NextResponse.json(
         {
           error: 'Missing required fields: email, password',
@@ -51,10 +64,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check for suspicious activity
+    const suspiciousCheck = detectSuspiciousActivity(clientIP, email)
+    if (suspiciousCheck.isSuspicious) {
+      logSecurityEvent(SecurityEventType.BRUTE_FORCE_DETECTED, request, {
+        email,
+        severity: 'CRITICAL',
+        additionalData: {
+          reason: suspiciousCheck.reason,
+          recentAttempts: suspiciousCheck.recentAttempts
+        }
+      })
+
+      return NextResponse.json(
+        {
+          error: SECURITY_MESSAGES.RATE_LIMIT_EXCEEDED,
+          success: false,
+          retryAfter: 900 // 15 minutes
+        },
+        { status: 429 }
+      )
+    }
+
     // Try Supabase first if configured
     if (supabase && isSupabaseConfigured) {
       try {
-        console.log(`Attempting to login user: ${email} (using Supabase)`)
+        logSecurityEvent(SecurityEventType.AUTHENTICATION_SUCCESS, request, {
+          email,
+          severity: 'LOW',
+          additionalData: { provider: 'supabase', stage: 'attempting' }
+        })
 
         // Authenticate user
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -63,10 +102,15 @@ export async function POST(request: NextRequest) {
         })
 
         if (authError) {
-          console.error('Login error:', authError)
+          logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+            email,
+            severity: 'MEDIUM',
+            additionalData: { provider: 'supabase', error: authError.message }
+          })
+
           return NextResponse.json(
             {
-              error: authError.message,
+              error: SECURITY_MESSAGES.INVALID_CREDENTIALS,
               success: false
             },
             { status: 401 }
@@ -74,9 +118,15 @@ export async function POST(request: NextRequest) {
         }
 
         if (!authData.user) {
+          logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+            email,
+            severity: 'MEDIUM',
+            additionalData: { provider: 'supabase', reason: 'No user data returned' }
+          })
+
           return NextResponse.json(
             {
-              error: 'Authentication failed',
+              error: SECURITY_MESSAGES.INVALID_CREDENTIALS,
               success: false
             },
             { status: 401 }
@@ -90,7 +140,12 @@ export async function POST(request: NextRequest) {
           .eq('id', authData.user.id)
           .single()
 
-        console.log(`Successfully logged in user: ${email}`)
+        logSecurityEvent(SecurityEventType.AUTHENTICATION_SUCCESS, request, {
+          email,
+          userId: authData.user.id,
+          severity: 'LOW',
+          additionalData: { provider: 'supabase', stage: 'completed' }
+        })
 
         return NextResponse.json({
           success: true,
@@ -119,45 +174,84 @@ export async function POST(request: NextRequest) {
         })
 
       } catch (supabaseError) {
-        console.error('Supabase login failed, falling back to fallback mode:', supabaseError)
+        logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+          email,
+          severity: 'HIGH',
+          additionalData: {
+            provider: 'supabase',
+            error: supabaseError instanceof Error ? supabaseError.message : 'Unknown error',
+            fallbackMode: true
+          }
+        })
       }
     }
 
-    // Fallback to fallback mode
-    console.log(`Attempting to login user: ${email} (using fallback auth)`)
+    // Fallback to secure fallback mode
+    logSecurityEvent(SecurityEventType.AUTHENTICATION_SUCCESS, request, {
+      email,
+      severity: 'LOW',
+      additionalData: { provider: 'fallback', stage: 'attempting' }
+    })
 
     // Find user by email
     const user = Object.values(FALLBACK_USERS).find(u => u.email === email)
 
     if (!user) {
+      logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+        email,
+        severity: 'MEDIUM',
+        additionalData: { provider: 'fallback', reason: 'User not found' }
+      })
+
       return NextResponse.json(
         {
-          error: 'User not found. Please register first.',
+          error: SECURITY_MESSAGES.INVALID_CREDENTIALS,
           success: false
         },
         { status: 401 }
       )
     }
 
-    // Verify password
-    if (!verifyPassword(password, user.password)) {
+    // Verify password using secure bcrypt comparison
+    const isPasswordValid = await verifyPassword(password, user.password)
+    
+    if (!isPasswordValid) {
+      logSecurityEvent(SecurityEventType.PASSWORD_VERIFICATION_FAILED, request, {
+        email,
+        userId: user.id,
+        severity: 'HIGH',
+        additionalData: { provider: 'fallback', reason: 'Invalid password' }
+      })
+
       return NextResponse.json(
         {
-          error: 'Invalid password',
+          error: SECURITY_MESSAGES.INVALID_CREDENTIALS,
           success: false
         },
         { status: 401 }
       )
     }
 
-    console.log(`Successfully logged in fallback user: ${email}`)
+    // Generate secure session token
+    const sessionData = generateSessionToken(user.id, user.email)
 
-    const token = generateToken()
-    const expiresAt = Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+    logSecurityEvent(SecurityEventType.AUTHENTICATION_SUCCESS, request, {
+      email,
+      userId: user.id,
+      severity: 'LOW',
+      additionalData: { provider: 'fallback', stage: 'completed' }
+    })
+
+    logSecurityEvent(SecurityEventType.SECURE_TOKEN_GENERATED, request, {
+      email,
+      userId: user.id,
+      severity: 'LOW',
+      additionalData: { tokenType: 'session', expiresAt: sessionData.expiresAt }
+    })
 
     return NextResponse.json({
       success: true,
-      message: 'Login successful (fallback mode)',
+      message: 'Login successful (secure fallback mode)',
       user: {
         id: user.id,
         email: user.email,
@@ -173,25 +267,34 @@ export async function POST(request: NextRequest) {
         emailConfirmed: true
       },
       session: {
-        access_token: token,
-        refresh_token: token + '_refresh',
-        expires_at: expiresAt
+        access_token: sessionData.token,
+        refresh_token: sessionData.token + '_refresh',
+        expires_at: sessionData.expiresAt
       },
-      mode: 'demo',
-      note: 'This is a demo login. Session will not persist between server restarts.',
+      mode: 'secure_demo',
+      note: 'Secure demo login with bcrypt hashing and comprehensive logging.',
       timestamp: new Date().toISOString()
     })
 
   } catch (error) {
-    console.error('Login error:', error)
+    logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILURE, request, {
+      email,
+      severity: 'CRITICAL',
+      additionalData: {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stage: 'exception'
+      }
+    })
 
     return NextResponse.json(
       {
-        error: 'Failed to login',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Authentication failed',
         success: false
       },
       { status: 500 }
     )
   }
 }
+
+// Export POST handler with rate limiting
+export const POST = withRateLimit(loginHandler, rateLimiters.auth)

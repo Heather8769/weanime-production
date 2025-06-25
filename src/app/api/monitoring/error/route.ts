@@ -132,52 +132,104 @@ export const GET = withRateLimit(async function(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const resolved = searchParams.get('resolved')
 
-    const supabase = createClient()
+    // Try to use Supabase, but fallback to file-based logs if needed
+    let logs: any[] = []
+    let stats: any = {}
 
-    let query = supabase
-      .from('error_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit)
+    try {
+      const supabase = createClient()
 
-    if (level) {
-      query = query.eq('level', level)
-    }
+      let query = supabase
+        .from('error_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit)
 
-    if (component) {
-      query = query.eq('context->>component', component)
-    }
+      if (level) {
+        query = query.eq('level', level)
+      }
 
-    if (resolved !== null) {
-      query = query.eq('resolved', resolved === 'true')
-    }
+      if (component) {
+        query = query.eq('context->>component', component)
+      }
 
-    const { data, error } = await query
+      if (resolved !== null) {
+        query = query.eq('resolved', resolved === 'true')
+      }
 
-    if (error) {
-      throw error
-    }
+      const { data, error } = await query
 
-    // Get error summary statistics
-    const { data: summary } = await supabase
-      .from('error_logs')
-      .select('level, created_at')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      if (error) {
+        console.warn('Supabase query failed, using fallback:', error.message)
+        throw error
+      }
 
-    const stats = {
-      total: data?.length || 0,
-      last24h: summary?.length || 0,
-      byLevel: summary?.reduce((acc: any, log: any) => {
-        acc[log.level] = (acc[log.level] || 0) + 1
-        return acc
-      }, {}) || {}
+      logs = data || []
+
+      // Get error summary statistics
+      const { data: summary } = await supabase
+        .from('error_logs')
+        .select('level, created_at')
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+
+      stats = {
+        total: logs.length,
+        last24h: summary?.length || 0,
+        byLevel: summary?.reduce((acc: any, log: any) => {
+          acc[log.level] = (acc[log.level] || 0) + 1
+          return acc
+        }, {}) || {}
+      }
+
+    } catch (supabaseError) {
+      // Fallback to file-based error logs
+      console.log('Using fallback error log system')
+
+      try {
+        const fs = require('fs')
+        const path = require('path')
+        const logsPath = path.join(process.cwd(), 'logs', 'errors.json')
+
+        if (fs.existsSync(logsPath)) {
+          const fileContent = fs.readFileSync(logsPath, 'utf8')
+          const allLogs = JSON.parse(fileContent)
+
+          // Apply filters
+          logs = allLogs.filter((log: any) => {
+            if (level && log.level !== level) return false
+            if (component && !log.component?.toLowerCase().includes(component.toLowerCase())) return false
+            if (resolved !== null && log.resolved !== (resolved === 'true')) return false
+            return true
+          }).slice(0, limit)
+
+          stats = {
+            total: logs.length,
+            last24h: allLogs.filter((log: any) =>
+              new Date(log.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+            ).length,
+            byLevel: allLogs.reduce((acc: any, log: any) => {
+              acc[log.level] = (acc[log.level] || 0) + 1
+              return acc
+            }, {})
+          }
+        } else {
+          // No logs available
+          logs = []
+          stats = { total: 0, last24h: 0, byLevel: {} }
+        }
+      } catch (fileError) {
+        console.warn('File-based fallback also failed:', fileError)
+        logs = []
+        stats = { total: 0, last24h: 0, byLevel: {} }
+      }
     }
 
     return NextResponse.json({
       success: true,
-      logs: data,
+      logs,
       stats,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      source: logs.length > 0 ? 'database' : 'fallback'
     })
   } catch (error) {
     console.error('Failed to retrieve error logs:', error)

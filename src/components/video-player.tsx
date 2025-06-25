@@ -176,7 +176,9 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
   }, [isReady, savedProgress, hasStarted])
 
   const handleReady = useCallback(() => {
-    console.log('Video player ready for episode:', episode.id)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Video player ready for episode:', episode.id)
+    }
     setIsReady(true)
     setHasError(false)
     setRetryCount(0)
@@ -200,6 +202,17 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
 
     // Record startup performance
     performanceMonitor.recordMetric('video-ready-time', Date.now() - (window as any).__videoStartTime || 0)
+  }, [episode.id])
+
+  // Cleanup effect for video monitoring
+  useEffect(() => {
+    return () => {
+      const videoElement = playerRef.current?.getInternalPlayer() as HTMLVideoElement
+      if (videoElement && (videoElement as any).__cleanupMonitoring) {
+        ;(videoElement as any).__cleanupMonitoring()
+        delete (videoElement as any).__cleanupMonitoring
+      }
+    }
   }, [episode.id])
 
   const handleStart = () => {
@@ -233,17 +246,19 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
       (typeof error === 'object' && Object.keys(error).length > 0 && JSON.stringify(error) !== '{}')
     )
 
-    if (hasErrorContent) {
-      console.error('Video player error details:', {
-        error,
-        episode: episode.id,
-        retryCount,
-        errorType: error?.type || 'unknown',
-        errorMessage: error?.message || 'No message',
-        timestamp: new Date().toISOString()
-      })
-    } else {
-      console.warn('Video player received empty error event for episode:', episode.id)
+    if (process.env.NODE_ENV === 'development') {
+      if (hasErrorContent) {
+        console.error('Video player error details:', {
+          error,
+          episode: episode.id,
+          retryCount,
+          errorType: error?.type || 'unknown',
+          errorMessage: error?.message || 'No message',
+          timestamp: new Date().toISOString()
+        })
+      } else {
+        console.warn('Video player received empty error event for episode:', episode.id)
+      }
     }
 
     setHasError(true)
@@ -251,14 +266,18 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
 
     // Auto-retry up to 3 times
     if (retryCount < 3) {
-      console.log(`Auto-retrying video load (${retryCount + 1}/3) in 2 seconds...`)
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Auto-retrying video load (${retryCount + 1}/3) in 2 seconds...`)
+      }
       setTimeout(() => {
         setRetryCount(prev => prev + 1)
         setHasError(false)
         setIsReady(false)
       }, 2000)
     } else {
-      console.error('Max retries reached for video:', episode.id)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Max retries reached for video:', episode.id)
+      }
     }
   }, [retryCount, episode.id])
 
@@ -330,12 +349,14 @@ export function VideoPlayer({ episode, animeId, className }: VideoPlayerProps) {
       throw new Error('Real streaming source unavailable - invalid video URL format')
     }
 
-    console.log('Using video source:', {
-      url: source.url,
-      quality: source.quality,
-      episode: episode.id,
-      isValidUrl: validateVideoUrl(source.url)
-    })
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Using video source:', {
+        url: source.url,
+        quality: source.quality,
+        episode: episode.id,
+        isValidUrl: validateVideoUrl(source.url)
+      })
+    }
 
     return source.url
   }, [episode, settings.quality, validateVideoUrl])
