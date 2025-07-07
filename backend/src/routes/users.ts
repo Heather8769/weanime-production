@@ -32,16 +32,16 @@ router.get('/profile', authenticate, async (req: AuthenticatedRequest, res) => {
     
     // Get user profile with stats
     const [profileResult, statsResult] = await Promise.all([
-      supabase
+      getSupabase()
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .single(),
       // Get user statistics
       Promise.all([
-        supabase.from('watch_sessions').select('id', { count: 'exact' }).eq('user_id', userId),
-        supabase.from('user_bookmarks').select('id', { count: 'exact' }).eq('user_id', userId),
-        supabase.from('watch_sessions').select('watched_duration').eq('user_id', userId)
+        getSupabase().from('watch_sessions').select('id', { count: 'exact' }).eq('user_id', userId),
+        getSupabase().from('user_bookmarks').select('id', { count: 'exact' }).eq('user_id', userId),
+        getSupabase().from('watch_sessions').select('watched_duration').eq('user_id', userId)
       ])
     ]);
     
@@ -96,7 +96,7 @@ router.put('/profile', authenticate, async (req: AuthenticatedRequest, res) => {
         return obj;
       }, {} as any);
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('user_profiles')
       .update({
         ...filteredData,
@@ -135,7 +135,7 @@ router.get('/bookmarks', authenticate, async (req: AuthenticatedRequest, res) =>
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
     const offset = (page - 1) * limit;
     
-    const { data, error, count } = await supabase
+    const { data, error, count } = await getSupabase()
       .from('user_bookmarks')
       .select(`
         *,
@@ -190,7 +190,7 @@ router.post('/bookmarks', authenticate, async (req: AuthenticatedRequest, res) =
     }
     
     // Check if already bookmarked
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from('user_bookmarks')
       .select('id')
       .eq('user_id', userId)
@@ -205,7 +205,7 @@ router.post('/bookmarks', authenticate, async (req: AuthenticatedRequest, res) =
       return;
     }
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('user_bookmarks')
       .insert({
         user_id: userId,
@@ -242,7 +242,7 @@ router.delete('/bookmarks/:animeId', authenticate, async (req: AuthenticatedRequ
     const { animeId } = req.params;
     const userId = req.auth?.user.id;
     
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('user_bookmarks')
       .delete()
       .eq('user_id', userId)
@@ -276,7 +276,7 @@ router.get('/watch-history', authenticate, async (req: AuthenticatedRequest, res
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
     const offset = (page - 1) * limit;
     
-    const { data, error, count } = await supabase
+    const { data, error, count } = await getSupabase()
       .from('watch_sessions')
       .select(`
         *,
@@ -324,19 +324,19 @@ router.get('/stats', authenticate, async (req: AuthenticatedRequest, res) => {
     // Get comprehensive user statistics
     const [episodeStats, bookmarkStats, watchTimeData] = await Promise.all([
       // Total episodes watched
-      supabase
+      getSupabase()
         .from('watch_sessions')
         .select('id', { count: 'exact' })
         .eq('user_id', userId),
       
       // Total bookmarks
-      supabase
+      getSupabase()
         .from('user_bookmarks')
         .select('id', { count: 'exact' })
         .eq('user_id', userId),
       
       // Watch time data
-      supabase
+      getSupabase()
         .from('watch_sessions')
         .select('watched_duration')
         .eq('user_id', userId)
@@ -371,7 +371,7 @@ router.get('/:userId/profile', async (req, res) => {
   try {
     const { userId } = req.params;
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('user_profiles')
       .select('id, username, display_name, bio, avatar_url, created_at')
       .eq('id', userId)
@@ -392,8 +392,8 @@ router.get('/:userId/profile', async (req, res) => {
     
     // Get public stats
     const [episodeCount, bookmarkCount] = await Promise.all([
-      supabase.from('watch_sessions').select('id', { count: 'exact' }).eq('user_id', userId),
-      supabase.from('user_bookmarks').select('id', { count: 'exact' }).eq('user_id', userId)
+      getSupabase().from('watch_sessions').select('id', { count: 'exact' }).eq('user_id', userId),
+      getSupabase().from('user_bookmarks').select('id', { count: 'exact' }).eq('user_id', userId)
     ]);
     
     res.json({

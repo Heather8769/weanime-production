@@ -57,7 +57,7 @@ router.get('/users', authenticate, requireAdmin, validateAdminUserQuery, async (
     
     const offset = (page - 1) * limit;
     
-    let query = supabase
+    let query = getSupabase()
       .from('user_profiles')
       .select('*', { count: 'exact' });
     
@@ -144,7 +144,7 @@ router.put('/users/:id/role', authenticate, requireAdmin, validateUpdateUserRole
       return;
     }
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('user_profiles')
       .update({
         role,
@@ -196,7 +196,7 @@ router.put('/users/:id/status', authenticate, requireAdmin, validateUpdateUserSt
       return;
     }
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('user_profiles')
       .update({
         is_active,
@@ -275,7 +275,7 @@ router.post('/users/bulk-action', authenticate, requireAdmin, validateBulkUserAc
     
     if (action === 'delete') {
       // Delete users (be careful with this)
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('user_profiles')
         .delete()
         .in('id', user_ids);
@@ -288,7 +288,7 @@ router.post('/users/bulk-action', authenticate, requireAdmin, validateBulkUserAc
       result = { count: user_ids.length };
     } else {
       // Update users
-      const { data, error, count } = await supabase
+      const { data, error, count } = await getSupabase()
         .from('user_profiles')
         .update(updateData)
         .in('id', user_ids)
@@ -327,7 +327,7 @@ router.get('/analytics', authenticate, requireAdmin, validateAnalyticsQuery, asy
     
     switch (metric) {
       case 'user_registrations':
-        const { count: userCount } = await supabase
+        const { count: userCount } = await getSupabase()
           .from('user_profiles')
           .select('id', { count: 'exact' })
           .gte('created_at', start_date || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
@@ -336,7 +336,7 @@ router.get('/analytics', authenticate, requireAdmin, validateAnalyticsQuery, asy
         break;
         
       case 'user_activity':
-        const { count: activeUsers } = await supabase
+        const { count: activeUsers } = await getSupabase()
           .from('user_profiles')
           .select('id', { count: 'exact' })
           .gte('last_login_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
@@ -344,7 +344,7 @@ router.get('/analytics', authenticate, requireAdmin, validateAnalyticsQuery, asy
         break;
         
       case 'content_views':
-        const { count: totalViews } = await supabase
+        const { count: totalViews } = await getSupabase()
           .from('watch_sessions')
           .select('id', { count: 'exact' })
           .gte('session_start', start_date || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
@@ -352,7 +352,7 @@ router.get('/analytics', authenticate, requireAdmin, validateAnalyticsQuery, asy
         break;
         
       case 'popular_anime':
-        const { data: popularAnime } = await supabase
+        const { data: popularAnime } = await getSupabase()
           .from('anime_cache')
           .select('title, score')
           .order('score', { ascending: false })
@@ -390,7 +390,7 @@ router.get('/analytics', authenticate, requireAdmin, validateAnalyticsQuery, asy
 router.get('/system-status', authenticate, requireAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     // Check database connectivity
-    const { data: dbTest, error: dbError } = await supabase
+    const { data: dbTest, error: dbError } = await getSupabase()
       .from('user_profiles')
       .select('id')
       .limit(1);
@@ -399,9 +399,9 @@ router.get('/system-status', authenticate, requireAdmin, async (req: Authenticat
     
     // Get basic stats
     const [userCount, animeCount, episodeCount] = await Promise.all([
-      supabase.from('user_profiles').select('id', { count: 'exact' }),
-      supabase.from('anime_cache').select('id', { count: 'exact' }),
-      supabase.from('episodes').select('id', { count: 'exact' })
+      getSupabase().from('user_profiles').select('id', { count: 'exact' }),
+      getSupabase().from('anime_cache').select('id', { count: 'exact' }),
+      getSupabase().from('episodes').select('id', { count: 'exact' })
     ]);
     
     res.json({

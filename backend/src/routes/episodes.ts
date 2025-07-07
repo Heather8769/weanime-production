@@ -48,7 +48,7 @@ router.get('/', optionalAuthenticate, validateEpisodeQuery, async (req: Authenti
     
     const offset = (page - 1) * limit;
     
-    let query = supabase
+    let query = getSupabase()
       .from('episodes')
       .select(`
         *,
@@ -112,7 +112,7 @@ router.get('/:id', optionalAuthenticate, validateEpisodeIdParam, async (req: Aut
     const { id } = req.params;
     const userId = req.auth?.user.id;
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('episodes')
       .select(`
         *,
@@ -136,7 +136,7 @@ router.get('/:id', optionalAuthenticate, validateEpisodeIdParam, async (req: Aut
     }
     
     // Get video sources
-    const { data: videoSources } = await supabase
+    const { data: videoSources } = await getSupabase()
       .from('video_sources')
       .select('*')
       .eq('episode_id', id)
@@ -145,7 +145,7 @@ router.get('/:id', optionalAuthenticate, validateEpisodeIdParam, async (req: Aut
     // Get watch progress if user is authenticated
     let watchProgress = null;
     if (userId) {
-      const { data: progress } = await supabase
+      const { data: progress } = await getSupabase()
         .from('watch_sessions')
         .select('*')
         .eq('episode_id', id)
@@ -180,7 +180,7 @@ router.post('/', authenticate, requireModerator, validateCreateEpisode, async (r
     const episodeData = req.body;
     
     // Verify anime exists
-    const { data: anime } = await supabase
+    const { data: anime } = await getSupabase()
       .from('anime_cache')
       .select('id')
       .eq('id', episodeData.anime_id)
@@ -195,7 +195,7 @@ router.post('/', authenticate, requireModerator, validateCreateEpisode, async (r
     }
     
     // Check if episode number already exists for this anime
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from('episodes')
       .select('id')
       .eq('anime_id', episodeData.anime_id)
@@ -211,7 +211,7 @@ router.post('/', authenticate, requireModerator, validateCreateEpisode, async (r
       return;
     }
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('episodes')
       .insert({
         ...episodeData,
@@ -249,7 +249,7 @@ router.put('/:id', authenticate, requireModerator, validateEpisodeIdParam, valid
     const { id } = req.params;
     const updateData = req.body;
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('episodes')
       .update({
         ...updateData,
@@ -293,19 +293,19 @@ router.delete('/:id', authenticate, requireAdmin, validateEpisodeIdParam, async 
     const { id } = req.params;
     
     // Delete associated video sources first
-    await supabase
+    await getSupabase()
       .from('video_sources')
       .delete()
       .eq('episode_id', id);
     
     // Delete watch sessions
-    await supabase
+    await getSupabase()
       .from('watch_sessions')
       .delete()
       .eq('episode_id', id);
     
     // Delete the episode
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('episodes')
       .delete()
       .eq('id', id);
@@ -337,7 +337,7 @@ router.post('/:id/video-sources', authenticate, requireModerator, validateEpisod
     const videoSourceData = req.body;
     
     // Verify episode exists
-    const { data: episode } = await supabase
+    const { data: episode } = await getSupabase()
       .from('episodes')
       .select('id')
       .eq('id', id)
@@ -352,7 +352,7 @@ router.post('/:id/video-sources', authenticate, requireModerator, validateEpisod
     }
     
     // Check if video source with same quality already exists
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from('video_sources')
       .select('id')
       .eq('episode_id', id)
@@ -367,7 +367,7 @@ router.post('/:id/video-sources', authenticate, requireModerator, validateEpisod
       return;
     }
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('video_sources')
       .insert({
         ...videoSourceData,
@@ -407,7 +407,7 @@ router.post('/:id/watch', authenticate, validateEpisodeIdParam, validateUpdatePr
     const progressData = req.body;
     
     // Verify episode exists
-    const { data: episode } = await supabase
+    const { data: episode } = await getSupabase()
       .from('episodes')
       .select('id, anime_id')
       .eq('id', id)
@@ -422,7 +422,7 @@ router.post('/:id/watch', authenticate, validateEpisodeIdParam, validateUpdatePr
     }
     
     // Check if watch session already exists
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from('watch_sessions')
       .select('id')
       .eq('episode_id', id)
@@ -433,7 +433,7 @@ router.post('/:id/watch', authenticate, validateEpisodeIdParam, validateUpdatePr
     
     if (existing) {
       // Update existing session
-      ({ data, error } = await supabase
+      ({ data, error } = await getSupabase()
         .from('watch_sessions')
         .update({
           ...progressData,
@@ -445,7 +445,7 @@ router.post('/:id/watch', authenticate, validateEpisodeIdParam, validateUpdatePr
         .single());
     } else {
       // Create new session
-      ({ data, error } = await supabase
+      ({ data, error } = await getSupabase()
         .from('watch_sessions')
         .insert({
           episode_id: id,
@@ -487,7 +487,7 @@ router.get('/:id/next', optionalAuthenticate, validateEpisodeIdParam, async (req
     const { id } = req.params;
     
     // Get current episode
-    const { data: currentEpisode } = await supabase
+    const { data: currentEpisode } = await getSupabase()
       .from('episodes')
       .select('anime_id, episode_number, season_number')
       .eq('id', id)
@@ -502,7 +502,7 @@ router.get('/:id/next', optionalAuthenticate, validateEpisodeIdParam, async (req
     }
     
     // Find next episode
-    const { data: nextEpisode } = await supabase
+    const { data: nextEpisode } = await getSupabase()
       .from('episodes')
       .select('*')
       .eq('anime_id', currentEpisode.anime_id)
@@ -514,7 +514,7 @@ router.get('/:id/next', optionalAuthenticate, validateEpisodeIdParam, async (req
     
     if (!nextEpisode) {
       // Try next season
-      const { data: nextSeasonEpisode } = await supabase
+      const { data: nextSeasonEpisode } = await getSupabase()
         .from('episodes')
         .select('*')
         .eq('anime_id', currentEpisode.anime_id)
@@ -555,7 +555,7 @@ router.get('/:id/previous', optionalAuthenticate, validateEpisodeIdParam, async 
     const { id } = req.params;
     
     // Get current episode
-    const { data: currentEpisode } = await supabase
+    const { data: currentEpisode } = await getSupabase()
       .from('episodes')
       .select('anime_id, episode_number, season_number')
       .eq('id', id)
@@ -570,7 +570,7 @@ router.get('/:id/previous', optionalAuthenticate, validateEpisodeIdParam, async 
     }
     
     // Find previous episode
-    const { data: previousEpisode } = await supabase
+    const { data: previousEpisode } = await getSupabase()
       .from('episodes')
       .select('*')
       .eq('anime_id', currentEpisode.anime_id)
@@ -582,7 +582,7 @@ router.get('/:id/previous', optionalAuthenticate, validateEpisodeIdParam, async 
     
     if (!previousEpisode) {
       // Try previous season
-      const { data: previousSeasonEpisode } = await supabase
+      const { data: previousSeasonEpisode } = await getSupabase()
         .from('episodes')
         .select('*')
         .eq('anime_id', currentEpisode.anime_id)

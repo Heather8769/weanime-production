@@ -49,7 +49,7 @@ router.get('/', optionalAuthenticate, validateAnimeQuery, async (req: Authentica
     
     const offset = (page - 1) * limit;
     
-    let query = supabase
+    let query = getSupabase()
       .from('anime_cache')
       .select('*', { count: 'exact' });
     
@@ -119,7 +119,7 @@ router.get('/:id', optionalAuthenticate, validateAnimeIdParam, async (req: Authe
   try {
     const { id } = req.params;
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('anime_cache')
       .select('*')
       .eq('id', id)
@@ -138,7 +138,7 @@ router.get('/:id', optionalAuthenticate, validateAnimeIdParam, async (req: Authe
     }
     
     // Get episode count
-    const { count: episodeCount } = await supabase
+    const { count: episodeCount } = await getSupabase()
       .from('episodes')
       .select('id', { count: 'exact' })
       .eq('anime_id', id);
@@ -165,7 +165,7 @@ router.post('/', authenticate, requireAdmin, validateCreateAnime, async (req: Au
     const animeData = req.body;
     
     // Check if anime with same title already exists
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from('anime_cache')
       .select('id')
       .eq('title', animeData.title)
@@ -179,7 +179,7 @@ router.post('/', authenticate, requireAdmin, validateCreateAnime, async (req: Au
       return;
     }
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('anime_cache')
       .insert({
         ...animeData,
@@ -217,7 +217,7 @@ router.put('/:id', authenticate, requireAdmin, validateAnimeIdParam, validateUpd
     const { id } = req.params;
     const updateData = req.body;
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('anime_cache')
       .update({
         ...updateData,
@@ -261,7 +261,7 @@ router.delete('/:id', authenticate, requireAdmin, validateAnimeIdParam, async (r
     const { id } = req.params;
     
     // Check if anime has episodes
-    const { count: episodeCount } = await supabase
+    const { count: episodeCount } = await getSupabase()
       .from('episodes')
       .select('id', { count: 'exact' })
       .eq('anime_id', id);
@@ -274,7 +274,7 @@ router.delete('/:id', authenticate, requireAdmin, validateAnimeIdParam, async (r
       return;
     }
     
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('anime_cache')
       .delete()
       .eq('id', id);
@@ -307,7 +307,7 @@ router.get('/:id/episodes', optionalAuthenticate, validateAnimeIdParam, async (r
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
     const offset = (page - 1) * limit;
     
-    const { data, error, count } = await supabase
+    const { data, error, count } = await getSupabase()
       .from('episodes')
       .select('*', { count: 'exact' })
       .eq('anime_id', id)
@@ -347,7 +347,7 @@ router.get('/popular', optionalAuthenticate, async (req: AuthenticatedRequest, r
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('anime_cache')
       .select('*')
       .order('score', { ascending: false })
@@ -378,7 +378,7 @@ router.get('/trending', optionalAuthenticate, async (req: AuthenticatedRequest, 
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('anime_cache')
       .select('*')
       .eq('status', 'ongoing')
