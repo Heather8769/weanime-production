@@ -1,0 +1,31 @@
+{
+  "name": "weanime-frontend",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@supabase/auth-helpers-nextjs": "^0.6.0",
+    "@tanstack/react-query": "^5.27.0",
+    "autoprefixer": "^10.4.16",
+    "framer-motion": "^10.16.0",
+    "next": "15.2.3",
+    "postcss": "^8.4.31",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-swipeable": "^7.0.2",
+    "shadcn-ui": "0.3.0",
+    "shaka-player": "^4.3.4",
+    "tailwindcss": "^3.4.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.8",
+    "eslint": "^8.56.0",
+    "typescript": "^5.5.0"
+  }
+}

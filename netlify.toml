@@ -1,0 +1,29 @@
+[build]
+  # Base directory for the build
+  base = "frontend"
+
+  # Build command
+  command = "npm run build"
+
+  # Directory to publish (Next.js SSR build)
+  publish = ".next"
+
+[build.environment]
+  # Node.js version
+  NODE_VERSION = "18"
+
+  # Production environment
+  NODE_ENV = "production"
+
+# Next.js runtime for SSR
+[functions]
+  node_bundler = "esbuild"
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
